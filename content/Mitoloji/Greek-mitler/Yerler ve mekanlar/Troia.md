@@ -9,4 +9,4 @@ tags: [Yer/Mekan]
 
 Antik Çağ'ın en ünlü kentlerinden biri. Diğer adı [[Ilion]]'dur.
 
-Illion'un diğer ismi::Troia
+Ilion'un diğer ismi::Troia

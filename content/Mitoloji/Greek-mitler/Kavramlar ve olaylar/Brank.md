@@ -11,3 +11,5 @@ Brankhidler [[Apollon]]'un kahinlerine verilen isim.
 
 Didyma Tapınağı'nın kâhinlerine ne ad verilir?::Brankhidler
 Brankhidler hangi tanrının kültü ile ilişkilidir?::Apollon
+
+Brankhid
