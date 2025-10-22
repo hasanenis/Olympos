@@ -32,3 +32,5 @@ Ganymedes: Zeus tarafından kaçırılan ve Olympos'ta tanrılara sakilik yapan 
 *   Ganymedes kimdir?::Zeus'un sakisi olan Troialı prens.
 *   Ganymedes'i kim kaçırmıştır?::Zeus.
 
+https://lh3.googleusercontent.com/notebooklm/ANHWnzIFGlUGnIF478fqT3k44tv-kmfmjteizGzkueLM1XVpJcrTBsVU8c_vshdWYMosKJzgipArFcxwtvUlB7bmNcYa7aZc3c84nxYnIDSbPMcWuanSy-d9Sp6MMEqVVc5qtKyV9KN23y2rslNA4KG3qWSBoDO08AE=m22?authuser=0
+

@@ -3,6 +3,7 @@ type:
 title:
 creationDate:
 tags:
+  - Kavram/Olay
 ---
 ### 🏺 **Dynosos Şenlikleri (Dionysia)**
 
