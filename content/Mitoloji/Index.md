@@ -8,4 +8,4 @@ longform:
   ignoredFiles: []
 ---
 
-1
+obsidian://open?vault=Mitoloji&file=Greek-mitler%2FTanr%C4%B1lar%2FOlimposlular__Yunan_Tanr%C4%B1lar%C4%B1.mp4
