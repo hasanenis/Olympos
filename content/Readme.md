@@ -1,0 +1,1 @@
+Mitoloji notları by hasan enis gül.

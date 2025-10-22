@@ -1,0 +1,20 @@
+views:
+  - type: table
+    name: Table
+    order:
+      - file.name
+      - tags
+      - file.links
+      - kuşak
+  - type: table
+    name: View
+    order:
+      - file.name
+      - file.tags
+      - file.path
+      - kuşak
+    sort:
+      - property: file.tags
+        direction: DESC
+      - property: file.name
+        direction: ASC
