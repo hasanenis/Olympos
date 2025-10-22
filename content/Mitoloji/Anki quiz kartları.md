@@ -7,9 +7,11 @@ longform:
   scenes: []
   ignoredFiles: []
 ---
+
+anki dosyası:
 ![[Greek mitler.apkg]]
 
-inen anki dosyasını anki uygulamasından içeri aktarabilirsiniz. Flashcarttır.
+üstteki anki dosyasını indirdikten sonra anki uygulamasından içeri aktarabilirsiniz. Flashcarttır.
 Aşamalar böyledir: 
 
 
