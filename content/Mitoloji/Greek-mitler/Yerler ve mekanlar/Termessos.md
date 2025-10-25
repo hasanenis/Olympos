@@ -7,7 +7,8 @@ tags: [Yer/Mekan]
 
 # Termessos
 
-Pisidya bölgesinde (Fethiye civarı) bulunan antik kent.
+(Fethiye civarı) bulunan antik kent.
 
 
-Pisidya bölgesinde (Fethiye civarı) bulunan antik kent nedir::Termessos
+(Fethiye civarı) bulunan antik kent nedir::Termessos
+

@@ -5,7 +5,7 @@ creationDate: 2025-10-13 18:00
 tags: [Yer/Mekan]
 ---
 
-# Ephesos (Efes)
+# Ephesos 
 
 Antik İyonya kenti. Koruyucu tanrıçası [[Artemis]]'tir. 
 
@@ -16,3 +16,6 @@ Ephesos: İonia bölgesinde bulunan antik kent, Artemis Tapınağı ile ünlüd�
 *   Ephesos nerede bulunur?::İonia Bölgesi
 *   Ephesos ne ile ünlüdür?::Artemis Tapınağı
 *   Ephesos'u kimin kurduğuna inanılır?::Amazonlar
+
+
+Ephesos antik kenti deme zaten ephesos Antik kent demek.

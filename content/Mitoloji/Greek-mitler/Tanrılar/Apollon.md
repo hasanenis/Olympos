@@ -14,6 +14,7 @@ banner-y: 14
 
 Müzik, sanat, şiir, okçuluk, kehanet, tıp ve Güneş'in tanrısıdır. [[Zeus]] ile **Leto**'nun oğlu ve **[[Artemis]]**'in ikiz kardeşidir. Genellikle genç, sarışın, atletik ve yakışıklı bir figür olarak tasvir edilir. Kehanet yeteneği ve Delfi'deki ünlü kehanet merkezi onunla ilişkilendirilir. Ok ve yay ile simgelenir. Bazen **"Phoebus"** (Parlak) sıfatıyla anılır ve ışığı temsil eder. Aşk hayatı genellikle mutsuzluklarla doludur (Daphne, Kassandra gibi); bu da onun hem aydınlık hem de trajik yönünü vurgular.
 
+
 # Apollon
 
 Apollon: Zeus ile Leto'nun oğlu, Artemis'in ikiz kardeşi. Kehanet, müzik, şiir, sanat, güneş ve ışığın tanrısı. Delphi 'deki ünlü kehanet merkezi ona aittir. "Phoibos" (parlak, ışık saçan) lakabıyla da anılır.

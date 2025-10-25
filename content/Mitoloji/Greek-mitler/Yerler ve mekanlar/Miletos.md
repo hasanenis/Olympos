@@ -6,10 +6,11 @@ tags:
   - Yer/Mekan
 ---
 # Miletos
+aydın balat
 
 Miletos: ionya bölgesinde önemli bir liman kenti. Thales, Anaksimandros ve Anaksimenes gibi filozofların doğduğu yer. Ticaret ve felsefe merkezi.
 
-Miletos nerede bulunur?::ionya'da
+Miletos nerede bulunur?::ionya'da, Aydın balat
 
 Miletos'ta doğan önemli filozoflar kimlerdir?::Thales, Anaksimandros, Anaksimenes
 
