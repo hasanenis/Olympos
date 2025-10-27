@@ -1,6 +1,0 @@
----
-type:
-title:
-creationDate:
-tags:
----

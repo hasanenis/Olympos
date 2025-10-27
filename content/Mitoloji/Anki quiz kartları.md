@@ -10,6 +10,9 @@ longform:
 
 anki dosyası:
 ![[Greek mitler.apkg]]
+güncel anki dosyası:
+
+![[Greek mitler 1.apkg]]
 
 üstteki anki dosyasını indirdikten sonra anki uygulamasından içeri aktarabilirsiniz. Flashcarttır.
 Aşamalar böyledir: 
