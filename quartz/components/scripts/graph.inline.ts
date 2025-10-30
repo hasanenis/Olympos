@@ -14,7 +14,7 @@ import {
   drag,
   zoom,
 } from "d3"
-import { Text, Graphics, Application, Container, Circle } from "pixi.js"
+import { Text, Graphics, Application, Container, Circle, BlurFilter } from "pixi.js"
 import { Group as TweenGroup, Tween as Tweened } from "@tweenjs/tween.js"
 import { registerEscapeHandler, removeAllChildren } from "./util"
 import { FullSlug, SimpleSlug, getFullSlug, resolveRelative, simplifySlug } from "../../util/path"
@@ -216,8 +216,11 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
   let hoveredNeighbours: Set<string> = new Set()
   const linkRenderData: LinkRenderData[] = []
   const nodeRenderData: NodeRenderData[] = []
+  const hoverBlurFilter = new BlurFilter(6)
+  hoverBlurFilter.quality = 3
   function updateHoverInfo(newHoveredId: string | null) {
     hoveredNodeId = newHoveredId
+    graph.classList.toggle("graph-focus-active", newHoveredId !== null)
 
     if (newHoveredId === null) {
       hoveredNeighbours = new Set()
@@ -259,7 +262,8 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
       // if we are hovering over a node, we want to highlight the immediate neighbours
       // with full alpha and the rest with default alpha
       if (hoveredNodeId) {
-        alpha = l.active ? 1 : 0.2
+        const inactiveAlpha = focusOnHover ? 0 : 0.15
+        alpha = l.active ? 1 : inactiveAlpha
       }
 
       l.color = l.active ? computedStyleMap["--gray"] : computedStyleMap["--lightgray"]
@@ -283,6 +287,13 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     const activeScale = defaultScale * 1.1
     for (const n of nodeRenderData) {
       const nodeId = n.simulationData.id
+      const focusActive = focusOnHover && hoveredNodeId !== null
+
+      if (focusActive) {
+        n.label.filters = n.active ? [] : [hoverBlurFilter]
+      } else {
+        n.label.filters = []
+      }
 
       if (hoveredNodeId === nodeId) {
         tweenGroup.add(
@@ -325,7 +336,8 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
 
       // if we are hovering over a node, we want to highlight the immediate neighbours
       if (hoveredNodeId !== null && focusOnHover) {
-        alpha = n.active ? 1 : 0.2
+        const inactiveAlpha = 0
+        alpha = n.active ? 1 : inactiveAlpha
       }
 
       tweenGroup.add(new Tweened<Graphics>(n.gfx, tweenGroup).to({ alpha }, 200))
