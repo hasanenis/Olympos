@@ -1,0 +1,823 @@
+{
+  "nodes": [
+    {
+      "id": "n1",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Helen"
+    },
+    {
+      "id": "n2",
+      "type": "text",
+      "x": 521.0071243998959,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 203,
+      "text": "Sparta Kraliçesi"
+    },
+    {
+      "id": "n3",
+      "type": "text",
+      "x": 1411.6239649995273,
+      "y": 1035.6183996573648,
+      "width": 203,
+      "height": 62,
+      "text": "Eşi \\(Menelaos)"
+    },
+    {
+      "id": "n4",
+      "type": "text",
+      "x": 791.931463391272,
+      "y": 1454.9702859587449,
+      "width": 203,
+      "height": 84,
+      "text": "Zeus ve Leda'nın kızı"
+    },
+    {
+      "id": "n5",
+      "type": "text",
+      "x": 1353.583979496253,
+      "y": 1599.255194895789,
+      "width": 203,
+      "height": 62,
+      "text": "Klytaimestra"
+    },
+    {
+      "id": "n6",
+      "type": "text",
+      "x": 485.5333425118424,
+      "y": 1697.3251194377058,
+      "width": 203,
+      "height": 203,
+      "text": "Kardeşler"
+    },
+    {
+      "id": "n7",
+      "type": "text",
+      "x": 769.01460553545,
+      "y": 2069.376425212992,
+      "width": 203,
+      "height": 84,
+      "text": "Dioskurlar \\(Kastor)"
+    },
+    {
+      "id": "n8",
+      "type": "text",
+      "x": 23.601325236436537,
+      "y": 1770.8275821884865,
+      "width": 203,
+      "height": 84,
+      "text": "Dioskurlar \\(Polydeukes)"
+    },
+    {
+      "id": "n9",
+      "type": "text",
+      "x": 223.2643908764146,
+      "y": 949.7161915310166,
+      "width": 203,
+      "height": 107,
+      "text": "Truva Savaşı'nın sebebi"
+    },
+    {
+      "id": "n10",
+      "type": "text",
+      "x": 324.7870506593354,
+      "y": 488.7089816696583,
+      "width": 203,
+      "height": 203,
+      "text": "Prens Paris tarafından kaçırılmış"
+    },
+    {
+      "id": "n11",
+      "type": "text",
+      "x": 15.44483965119582,
+      "y": 406.0184514848727,
+      "width": 203,
+      "height": 62,
+      "text": "Olay \\(Paris)"
+    },
+    {
+      "id": "n12",
+      "type": "text",
+      "x": 946.4099941644021,
+      "y": 237.97050376246125,
+      "width": 203,
+      "height": 107,
+      "text": "_İlyada_'da pişman ve gururlu"
+    },
+    {
+      "id": "n13",
+      "type": "text",
+      "x": 686.8601560479926,
+      "y": -69.91928547997622,
+      "width": 203,
+      "height": 129,
+      "text": "Helen'in güzelliği için çekilen acıyı haklı bulur"
+    },
+    {
+      "id": "n14",
+      "type": "text",
+      "x": 1316.8403151164648,
+      "y": 59.148219025744766,
+      "width": 203,
+      "height": 107,
+      "text": "Saygın ve bilge kraliçe olarak dönüş"
+    },
+    {
+      "id": "n15",
+      "type": "text",
+      "x": 1409.4457393860803,
+      "y": 640.5491883506969,
+      "width": 203,
+      "height": 84,
+      "text": "Geri Dönüş \\(Menelaos)"
+    },
+    {
+      "id": "n17",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Akhilleus",
+      "color": "#f88373"
+    },
+    {
+      "id": "n18",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 203,
+      "text": "Yunanistan'ın büyük kahramanı"
+    },
+    {
+      "id": "n19",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Baba \\(Peleus)"
+    },
+    {
+      "id": "n20",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Anne \\(Tethys)"
+    },
+    {
+      "id": "n21",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 203,
+      "text": "Styx Nehri'ne batırılmış"
+    },
+    {
+      "id": "n22",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 203,
+      "text": "Paris'in okuyla öldü"
+    },
+    {
+      "id": "n23",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Sonuc \\(Paris)"
+    },
+    {
+      "id": "n25",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Platon"
+    },
+    {
+      "id": "n26",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 84,
+      "text": "Antik Yunan filozofu"
+    },
+    {
+      "id": "n28",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Homeros",
+      "color": "#75ed99"
+    },
+    {
+      "id": "n29",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Mitolojinin ozanı"
+    },
+    {
+      "id": "n31",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Aedler"
+    },
+    {
+      "id": "n32",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 129,
+      "text": "Mitolojik hikayeleri aktaran gezgin ozanlar"
+    },
+    {
+      "id": "n34",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 203,
+      "text": "Kyklōpes"
+    },
+    {
+      "id": "n35",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "İlk Grup",
+      "color": "#f88373"
+    },
+    {
+      "id": "n36",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 84,
+      "text": "Arges, Brontes, Steropes"
+    },
+    {
+      "id": "n37",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 107,
+      "text": "Zeus'a şimşeği veren usta sanatkârlar"
+    },
+    {
+      "id": "n38",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 107,
+      "text": "Anne ve Baba \\(Gaia ve Uranos)"
+    },
+    {
+      "id": "n39",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "İkinci Grup"
+    },
+    {
+      "id": "n40",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 129,
+      "text": "Odysseus'un kör ettiği vahşi Kyklōpes \\(Polyphemos)"
+    },
+    {
+      "id": "n42",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Herakles",
+      "color": "#75ed99"
+    },
+    {
+      "id": "n43",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 203,
+      "text": "Anadolu'nun kahramanı"
+    },
+    {
+      "id": "n44",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Anne \\(Alkmene)"
+    },
+    {
+      "id": "n45",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Baba \\(Zeus)"
+    },
+    {
+      "id": "n46",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "On İki Görev"
+    },
+    {
+      "id": "n47",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 84,
+      "text": "Eurystheus (Eurystheus)"
+    },
+    {
+      "id": "n49",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Byzas"
+    },
+    {
+      "id": "n50",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 107,
+      "text": "Byzantium şehrinin kurucusu"
+    },
+    {
+      "id": "n52",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Téras"
+    },
+    {
+      "id": "n53",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 129,
+      "text": "İlksel tanrıların ebeveynleri \\(Gaia ve Uranos)"
+    },
+    {
+      "id": "n54",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 203,
+      "text": "Çocuklar"
+    },
+    {
+      "id": "n55",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 129,
+      "text": "Hesiodos'un Kyklōpes \\(Göksel Kyklōpes'ler)"
+    },
+    {
+      "id": "n56",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 107,
+      "text": "Homeros'un Kyklōpes \\(Polyphemos)"
+    },
+    {
+      "id": "n58",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Kerberos"
+    },
+    {
+      "id": "n59",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 84,
+      "text": "Üç başlı yeraltı köpeği \\(Hades)"
+    },
+    {
+      "id": "n61",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 203,
+      "text": "Menelaos"
+    },
+    {
+      "id": "n62",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 62,
+      "text": "Sparta Kralı"
+    },
+    {
+      "id": "n63",
+      "type": "text",
+      "x": 828.3864421816882,
+      "y": 841.293486233197,
+      "width": 203,
+      "height": 84,
+      "text": "Önemli bağlantı \\(Helene)"
+    }
+  ],
+  "edges": [
+    {
+      "id": "n1-n2-1",
+      "fromNode": "n1",
+      "toNode": "n2",
+      "label": "Kimdir",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "n2-n3-1",
+      "fromNode": "n2",
+      "toNode": "n3",
+      "label": "",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "n2-n4-1",
+      "fromNode": "n2",
+      "toNode": "n4",
+      "label": "Kimliği ve Kökeni",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n4-n5-1",
+      "fromNode": "n4",
+      "toNode": "n5",
+      "label": "Kızkardeş",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "n4-n6-1",
+      "fromNode": "n4",
+      "toNode": "n6",
+      "label": "",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n6-n7-1",
+      "fromNode": "n6",
+      "toNode": "n7",
+      "label": "",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n6-n8-1",
+      "fromNode": "n6",
+      "toNode": "n8",
+      "label": "",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "n2-n9-1",
+      "fromNode": "n2",
+      "toNode": "n9",
+      "label": "Önemi",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "n2-n10-1",
+      "fromNode": "n2",
+      "toNode": "n10",
+      "label": "Truva'ya Kaçırılışı",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n10-n11-1",
+      "fromNode": "n10",
+      "toNode": "n11",
+      "label": "",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "n2-n12-1",
+      "fromNode": "n2",
+      "toNode": "n12",
+      "label": "Homeros'taki Kişiliği",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n12-n13-1",
+      "fromNode": "n12",
+      "toNode": "n13",
+      "label": "Truvalı ihtiyarların görüşü",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n12-n14-1",
+      "fromNode": "n12",
+      "toNode": "n14",
+      "label": "_Odisseia_",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "n2-n15-1",
+      "fromNode": "n2",
+      "toNode": "n15",
+      "label": "",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "n17-n18-1",
+      "fromNode": "n17",
+      "toNode": "n18",
+      "label": "Kimdir",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n18-n19-1",
+      "fromNode": "n18",
+      "toNode": "n19",
+      "label": "",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n18-n20-1",
+      "fromNode": "n18",
+      "toNode": "n20",
+      "label": "",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n18-n21-1",
+      "fromNode": "n18",
+      "toNode": "n21",
+      "label": "Güç Kaynağı",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n18-n22-1",
+      "fromNode": "n18",
+      "toNode": "n22",
+      "label": "Sonu",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n22-n23-1",
+      "fromNode": "n22",
+      "toNode": "n23",
+      "label": "",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n25-n26-1",
+      "fromNode": "n25",
+      "toNode": "n26",
+      "label": "Meslek",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n28-n29-1",
+      "fromNode": "n28",
+      "toNode": "n29",
+      "label": "Meslek",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n31-n32-1",
+      "fromNode": "n31",
+      "toNode": "n32",
+      "label": "Tanım",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n34-n35-1",
+      "fromNode": "n34",
+      "toNode": "n35",
+      "label": "",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n35-n36-1",
+      "fromNode": "n35",
+      "toNode": "n36",
+      "label": "İsimler",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n35-n37-1",
+      "fromNode": "n35",
+      "toNode": "n37",
+      "label": "Özellikleri",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n37-n38-1",
+      "fromNode": "n37",
+      "toNode": "n38",
+      "label": "",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n34-n39-1",
+      "fromNode": "n34",
+      "toNode": "n39",
+      "label": "",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n39-n40-1",
+      "fromNode": "n39",
+      "toNode": "n40",
+      "label": "Tanım",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n42-n43-1",
+      "fromNode": "n42",
+      "toNode": "n43",
+      "label": "Kimdir",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n43-n44-1",
+      "fromNode": "n43",
+      "toNode": "n44",
+      "label": "",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n43-n45-1",
+      "fromNode": "n43",
+      "toNode": "n45",
+      "label": "",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n43-n46-1",
+      "fromNode": "n43",
+      "toNode": "n46",
+      "label": "Özeti",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n46-n47-1",
+      "fromNode": "n46",
+      "toNode": "n47",
+      "label": "Zorlayan",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n49-n50-1",
+      "fromNode": "n49",
+      "toNode": "n50",
+      "label": "Tanım",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n52-n53-1",
+      "fromNode": "n52",
+      "toNode": "n53",
+      "label": "Tanım",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n53-n54-1",
+      "fromNode": "n53",
+      "toNode": "n54",
+      "label": "",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n54-n55-1",
+      "fromNode": "n54",
+      "toNode": "n55",
+      "label": "",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n54-n56-1",
+      "fromNode": "n54",
+      "toNode": "n56",
+      "label": "",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n58-n59-1",
+      "fromNode": "n58",
+      "toNode": "n59",
+      "label": "Tanım",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "n61-n62-1",
+      "fromNode": "n61",
+      "toNode": "n62",
+      "label": "Konumu",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "n61-n63-1",
+      "fromNode": "n61",
+      "toNode": "n63",
+      "label": "",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ]
+}
