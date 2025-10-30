@@ -253,13 +253,15 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     tweens.get("link")?.stop()
     const tweenGroup = new TweenGroup()
 
+    const inactiveAlpha = 0
+
     for (const l of linkRenderData) {
       let alpha = 1
 
       // if we are hovering over a node, we want to highlight the immediate neighbours
-      // with full alpha and the rest with default alpha
+      // with full alpha and the rest almost invisible so the focus stays on context
       if (hoveredNodeId) {
-        alpha = l.active ? 1 : 0.2
+        alpha = l.active ? 1 : inactiveAlpha
       }
 
       l.color = l.active ? computedStyleMap["--gray"] : computedStyleMap["--lightgray"]
@@ -320,12 +322,14 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     tweens.get("hover")?.stop()
 
     const tweenGroup = new TweenGroup()
+    const inactiveAlpha = 0
+
     for (const n of nodeRenderData) {
       let alpha = 1
 
       // if we are hovering over a node, we want to highlight the immediate neighbours
       if (hoveredNodeId !== null && focusOnHover) {
-        alpha = n.active ? 1 : 0.2
+        alpha = n.active ? 1 : inactiveAlpha
       }
 
       tweenGroup.add(new Tweened<Graphics>(n.gfx, tweenGroup).to({ alpha }, 200))
