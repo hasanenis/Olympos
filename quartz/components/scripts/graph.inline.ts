@@ -14,7 +14,7 @@ import {
   drag,
   zoom,
 } from "d3"
-import { Text, Graphics, Application, Container, Circle } from "pixi.js"
+import { Text, Graphics, Application, Container, Circle, BlurFilter } from "pixi.js"
 import { Group as TweenGroup, Tween as Tweened } from "@tweenjs/tween.js"
 import { registerEscapeHandler, removeAllChildren } from "./util"
 import { FullSlug, SimpleSlug, getFullSlug, resolveRelative, simplifySlug } from "../../util/path"
@@ -216,6 +216,8 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
   let hoveredNeighbours: Set<string> = new Set()
   const linkRenderData: LinkRenderData[] = []
   const nodeRenderData: NodeRenderData[] = []
+  const hoverBlurFilter = new BlurFilter(6)
+  hoverBlurFilter.quality = 3
   function updateHoverInfo(newHoveredId: string | null) {
     hoveredNodeId = newHoveredId
     graph.classList.toggle("graph-focus-active", newHoveredId !== null)
@@ -285,6 +287,13 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     const activeScale = defaultScale * 1.1
     for (const n of nodeRenderData) {
       const nodeId = n.simulationData.id
+      const focusActive = focusOnHover && hoveredNodeId !== null
+
+      if (focusActive) {
+        n.label.filters = n.active ? [] : [hoverBlurFilter]
+      } else {
+        n.label.filters = []
+      }
 
       if (hoveredNodeId === nodeId) {
         tweenGroup.add(
