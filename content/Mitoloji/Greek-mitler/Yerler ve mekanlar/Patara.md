@@ -12,3 +12,5 @@ Patara: Likya bölgesinde önemli bir liman kenti; Apollon'un doğduğu ve kehan
 Patara nerenin önemli bir liman kentidir?::Likya (antalya)
 
 Apollon'un hangi kentte kehanet merkezi bulunurdu?::Patara
+
+Gelemiş antalya

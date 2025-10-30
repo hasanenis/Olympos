@@ -8,6 +8,7 @@ kuşak: İkinci Kuşak (Titanlar)
 ---
 
 # Kronos
+Zamanı simgeler.
 
 Kronos: Titanlar soyundan gelen, Uranos (gök) ile Gaia'nın (toprak) oğlu. Babasını hadım ederek tanrıların egemenliğini ele geçirir. Rhea ile evlenir. Çocuklarını doğar doğmaz yutar.
 

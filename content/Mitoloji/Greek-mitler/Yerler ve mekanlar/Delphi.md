@@ -14,3 +14,4 @@ Delphi: Apollon'un en önemli kehanet merkezi, Parnassos Dağı eteklerinde bulu
 Antik dünyanın en önemli kehanet merkezi::Delphi
 
 Apollon'un kehanet merkezi::Delphi
+

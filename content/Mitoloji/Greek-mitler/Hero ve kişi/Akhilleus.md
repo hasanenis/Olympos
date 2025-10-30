@@ -9,7 +9,7 @@ tags:
 # Akhilleus
 
 Asil. Yunanistan'ın en büyük kahramanı.
-Babası Peleus, annesi deniz tanrıçası [[Thetis]]’tir. [[Styx]] Nehri’ne batırıldığı için her yeri zırhlıdır, sadece topuğu zayıf kalır. Truva Savaşı’nda Hektor’u öldürür ama sonunda Paris’in oku topuğundan vurur ve ölür. Kahramanlık ve öfke sembolüdür.
+Babası Peleus, annesi deniz tanrıçası [[Tethys]]’tir. [[Styx]] Nehri’ne batırıldığı için her yeri zırhlıdır, sadece topuğu zayıf kalır. Truva Savaşı’nda Hektor’u öldürür ama sonunda Paris’in oku topuğundan vurur ve ölür. Kahramanlık ve öfke sembolüdür.
 
 Akhilleus kimdir::Yunanistanın büyük kahramanı
 

@@ -7,6 +7,10 @@ tags: [Yer/Mekan]
 
 # Halikarnasos Mozolesi
 
+Heredetos'un doğum yeri
+
+
+
 Dünyanın Yedi Harikası'ndan biri olan anıt mezar.
 
 *   Mozole hangi şehirde bulunur?::Halikarnassos (Bodrum)

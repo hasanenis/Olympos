@@ -9,5 +9,8 @@ tags:
 
 Nysa: Dionysos'un büyüdüğü efsanevi dağ veya bölge. Çeşitli yerlerde olduğu iddia edilir.
 
-*Soru: Dionysos nerede büyümüştür?::Nysa*
-*Soru: Nysa neyin mekanıdır?::Dionysos'un yetiştiği efsanevi yer*
+Dionysos nerede büyümüştür?::Nysa
+Nysa neyin mekanıdır?::Dionysos'un yetiştiği efsanevi yer
+
+
+Nysa, Aydın'daki Sultanhisar ilçesinin antik adıdır.

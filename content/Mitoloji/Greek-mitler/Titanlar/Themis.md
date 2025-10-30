@@ -8,6 +8,7 @@ kuşak: İkinci Kuşak (Titanlar)
 ---
 
 # Themis
+Yağmuru simgeler.
 
 İlahi Kanun, adalet, düzen ve kehanet Titanıdır. Titanlar içinde kozmik düzeni temsil eder ve Olimposlular döneminde de bu rolünü sürdürmüştür. [[Zeus]]'un ikinci karısı ve danışmanıdır. Horae (Mevsimler, Düzen) ve Moiralar (Kader Tanrıçaları)'ın annesidir. Savaşlardan uzak duran, bilgelik ve öngörüye odaklanan bir figürdür. Kanun koyucu ve Olimposluların siyasi düzeninin teminatı olarak, eski ve yeni düzen arasında bir köprü görevi görmüştür.
 

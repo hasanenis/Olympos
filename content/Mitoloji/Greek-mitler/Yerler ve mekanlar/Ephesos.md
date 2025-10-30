@@ -19,3 +19,5 @@ Ephesos: İonia bölgesinde bulunan antik kent, Artemis Tapınağı ile ünlüd�
 
 
 Ephesos antik kenti deme zaten ephesos Antik kent demek.
+
+Efes izmir selçuk.

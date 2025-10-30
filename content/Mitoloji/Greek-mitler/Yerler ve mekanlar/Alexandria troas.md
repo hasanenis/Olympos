@@ -11,3 +11,7 @@ soru- Alexandria Troas nedir?::Troas bölgesinde kurulmuş Helenistik kent.
 soru- Alexandria Troas adını kimden alır?::Büyük İskender’den (Alexandros).  
 soru- Alexandria Troas hangi bölgededir?::Küçük Asya’nın kuzeybatısında, Troas’ta.  
 Alexandria Troas neyle önem kazanmıştır?::Liman ve ticaret merkezi olmasıyla.
+
+
+
+Türkçesi Aleksandria Troas, günümüzdeki Ezine yakınlarındadır.

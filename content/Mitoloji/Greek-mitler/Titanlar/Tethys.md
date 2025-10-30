@@ -9,6 +9,8 @@ tags:
 
 Bir deniz tanrıçasıdır (Nereid). Kahraman [[Akhilleus]]'un annesidir.
 
+Yeraltı suları'dır sıfatı
+
 **Tethys**, Yunan mitolojisinde bir **Titan**’dır. [[Uranos]] (Gökyüzü) ile [[Gaia]]’nın (Toprak) kızı, [[Okeanos]]’un karısıdır. İkisi birlikte **Okeanidler** ve **nehir tanrılarının** ebeveynidir. Yani Tethys, mitolojik anlamda **tüm suların anası** sayılır.
 
 Thetis: Deniz tanrıçası, Nereus'un kızı ve [[Akhilleus]]'un annesi. Ölümlü Peleus ile evlenmiştir. [[Zeus]] ve [[Poseidon]]'un ilgisini çekmesine rağmen, bir kehanet sonucu, Thetis'in oğlunun babasından daha güçlü olacağı öngörülmüştür; bu yüzden ölümlü biriyle evlendirilmiştir.

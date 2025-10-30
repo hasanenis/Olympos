@@ -36,3 +36,6 @@ https://lh3.googleusercontent.com/notebooklm/ANHWnzIFGlUGnIF478fqT3k44tv-kmfmjte
 
 
 Asa zeusun atribusudur. Lider olduğu için aslandır.
+
+zeusu büyüten rahipler brankhid ve [[kuretler]].
+

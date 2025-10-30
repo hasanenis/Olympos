@@ -6,7 +6,7 @@ tags:
   - Titán
 kuşak: İkinci Kuşak (Titanlar)
 ---
-
+(yapetos)
 # İapetos
 
 Ölümlülük, yaşam süresi, yara ve Batı Titanıdır. Titanlar arasında genellikle insan soyunun atası olarak anılır. Clymene ([[Okeanos]] kızı) ile evlidir ve insanlık için büyük öneme sahip dört oğlu vardır: Prometheus (Öngörü), Epimetheus (Sonradan Düşünme), Atlas (Gök Kubbeyi Taşıyan) ve Menoitios (Şiddet). Özellikle oğlu Prometheus aracılığıyla insan ırkının yaratılışı ve kaderi ile doğrudan ilişkilidir. [[Titanomakhia]]'da [[Kronos]]'u desteklediği için [[Greek mitler/Yerler ve mekanlar/Tartaros]]'a hapsedilmiştir.

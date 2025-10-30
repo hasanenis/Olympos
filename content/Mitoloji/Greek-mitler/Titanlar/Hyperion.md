@@ -8,6 +8,7 @@ kuşak: İkinci Kuşak (Titanlar)
 ---
 
 # Hyperion
+Güneşi simgeler, 
 
 Gözlem, doğu ve göksel ışık Titanıdır. Titan [[s]]'nın eşi ve kardeşidir. Güneş ([[Helios]]), Ay (Selene) ve Şafak (Eos) gibi göksel cisimlerin babasıdır. Genellikle "yüksekte yürüyen" olarak anılır ve gök cisimlerinin temelini atarak, daha sonraki Işık Tanrısı [[Apollon]]'a giden yolu açmıştır. Kozmik bir güç olarak, gün ve gecenin ritmini belirleyen ilk ışıktan sorumludur.
 
