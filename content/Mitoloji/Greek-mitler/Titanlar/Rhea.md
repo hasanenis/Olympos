@@ -7,9 +7,9 @@ tags:
 kuşak: İkinci Kuşak (Titanlar)
 ---
 
-# Rhea
+# Rheia
 
-Doğurganlık, annelik, dağlık bölgeler ve akışkanlık Titanıdır. Titan [[Kronos]]'un eşi ve kız kardeşidir. Altı Olimposlu tanrının ( [[Zeus]], [[Poseidon]], [[Hades]], [[Hera]], Demeter, Hestia) annesidir. [[Kronos]]'un çocuklarını yutmasını engellemek için, [[Zeus]]'u gizlice doğurmuş ve [[Kronos]]'a bir kundaklanmış taş yutturarak oğlunun kurtulmasını sağlamıştır. Bu nedenle, oğlunun Titanlara karşı savaşını destekleyen kilit figürdür.
+Doğurganlık, annelik, dağlık bölgeler ve akışkanlık Titanıdır. Titan [[Kronos]]'un eşi ve kız kardeşidir. Altı Olimposlu tanrının ( [[Zeus]], [[Poseidon]], [[Hades]], [[Hera]], Demeter, [[Hestia]]) annesidir. [[Kronos]]'un çocuklarını yutmasını engellemek için, [[Zeus]]'u gizlice doğurmuş ve [[Kronos]]'a bir kundaklanmış taş yutturarak oğlunun kurtulmasını sağlamıştır. Bu nedenle, oğlunun Titanlara karşı savaşını destekleyen kilit figürdür.
 
 *   Rheia kimin eşidir?::Kronos
 *   Rheia'nın çocuklarından biri kimdir?::Zeus
