@@ -218,6 +218,7 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
   const nodeRenderData: NodeRenderData[] = []
   function updateHoverInfo(newHoveredId: string | null) {
     hoveredNodeId = newHoveredId
+    graph.classList.toggle("graph-focus-active", newHoveredId !== null)
 
     if (newHoveredId === null) {
       hoveredNeighbours = new Set()
@@ -259,7 +260,8 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
       // if we are hovering over a node, we want to highlight the immediate neighbours
       // with full alpha and the rest with default alpha
       if (hoveredNodeId) {
-        alpha = l.active ? 1 : 0.2
+        const inactiveAlpha = focusOnHover ? 0 : 0.15
+        alpha = l.active ? 1 : inactiveAlpha
       }
 
       l.color = l.active ? computedStyleMap["--gray"] : computedStyleMap["--lightgray"]
@@ -325,7 +327,8 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
 
       // if we are hovering over a node, we want to highlight the immediate neighbours
       if (hoveredNodeId !== null && focusOnHover) {
-        alpha = n.active ? 1 : 0.2
+        const inactiveAlpha = 0
+        alpha = n.active ? 1 : inactiveAlpha
       }
 
       tweenGroup.add(new Tweened<Graphics>(n.gfx, tweenGroup).to({ alpha }, 200))

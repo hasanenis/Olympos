@@ -36,6 +36,23 @@
         background-color: var(--lightgray);
       }
     }
+
+    & > .graph-container {
+      transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
+
+      & > canvas {
+        transition: filter 0.3s ease;
+      }
+
+      &.graph-focus-active {
+        backdrop-filter: blur(18px) saturate(0.4);
+        background-color: color-mix(in srgb, transparent 75%, var(--light) 25%);
+
+        & > canvas {
+          filter: saturate(0.3) brightness(0.9);
+        }
+      }
+    }
   }
 
   & > .global-graph-outer {
@@ -64,6 +81,21 @@
       transform: translate(-50%, -50%);
       height: 80vh;
       width: 80vw;
+
+      transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
+
+      & > canvas {
+        transition: filter 0.3s ease;
+      }
+
+      &.graph-focus-active {
+        backdrop-filter: blur(18px) saturate(0.4);
+        background-color: color-mix(in srgb, transparent 75%, var(--light) 25%);
+
+        & > canvas {
+          filter: saturate(0.3) brightness(0.9);
+        }
+      }
 
       @media all and not ($desktop) {
         width: 90%;
