@@ -17,9 +17,9 @@ kuşak: İkinci Kuşak (Titanlar)
 Ek Notlar (Sınav Odaklı):
 
 *   **Tematik bağlantılar:** Themis, geleceği görme yeteneğine de sahiptir (kehanet). Bu özelliğiyle Delfi'deki kehanet merkeziyle de ilişkilendirilir.
-*   **Homeros:** Homeros'un eserlerinde Themis, tanrıların toplantılarını düzenleyen ve Zeus'un emirlerini ileten bir figür olarak karşımıza çıkar.
+*   **Homeros:** Homeros'un eserlerinde Themis, tanrıların toplantılarını düzenleyen ve [[Zeus]]'un emirlerini ileten bir figür olarak karşımıza çıkar.
 *   **Semboller:** Terazi (adalet) ve kılıç (otorite) sembolleriyle temsil edilir.
 
-*   Themis kimin kızıdır?::Uranos ve Gaia
+*   Themis kimin kızıdır?::[[Uranos]] ve [[Gaia]]
 *   Themis neyi temsil eder?::Adalet ve düzen
 *   Zeus'un ilk eşi kimdir?::Themis
