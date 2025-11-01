@@ -43,6 +43,19 @@ const CanvasContent: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
   const slug = (fileData.slug ?? fileData.filePath ?? "canvas") as string
   const viewerId = `canvas-${slug.replace(/[^a-z0-9-]+/gi, "-")}`
   const viewportId = `${viewerId}-viewport`
+  const drawerId = `${viewerId}-drawer`
+  const drawerTitleId = `${drawerId}-title`
+
+  const drawerEntries = safeData.nodes
+    .map((node) => {
+      const raw = (node.label ?? node.text ?? node.id ?? "").trim()
+      const label = raw.length > 0 ? raw.split("\n")[0] : node.id
+      return {
+        id: node.id,
+        label,
+      }
+    })
+    .filter((entry) => entry.id && entry.label)
 
   return (
     <article class="canvas-page">
@@ -116,6 +129,43 @@ const CanvasContent: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
             gezinin.
           </p>
         </div>
+        <details class="canvas-drawer" id={drawerId} data-mobile-drawer>
+          <summary
+            class="canvas-drawer-handle"
+            aria-controls={`${drawerId}-panel`}
+            aria-label="Gezinme panelini aç"
+          >
+            ☰
+          </summary>
+          <nav
+            class="canvas-drawer-panel"
+            id={`${drawerId}-panel`}
+            aria-labelledby={drawerTitleId}
+          >
+            <h2 class="canvas-drawer-title" id={drawerTitleId}>
+              Düğümler
+            </h2>
+            {drawerEntries.length > 0 ? (
+              <ol class="canvas-drawer-list">
+                {drawerEntries.map((entry) => (
+                  <li key={entry.id}>
+                    <button
+                      type="button"
+                      class="canvas-drawer-link"
+                      data-node-id={entry.id}
+                      data-action="focus"
+                    >
+                      {entry.label}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p class="canvas-drawer-empty">Bu canvas için listelenecek düğüm yok.</p>
+            )}
+          </nav>
+        </details>
+        <div class="canvas-drawer-scrim" aria-hidden="true"></div>
         <div class="canvas-viewport" id={viewportId} role="region" aria-live="polite">
           <div class="canvas-inner">
             <svg class="canvas-edges" aria-hidden="true"></svg>
