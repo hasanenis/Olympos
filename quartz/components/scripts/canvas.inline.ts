@@ -50,102 +50,152 @@ type InteractionControls = {
   cleanup: Cleanup
   applyTransform: () => void
   focusCanvasPoint: (point: Point, options?: { animate?: boolean; minScale?: number }) => void
+  fitToViewport: (options?: { animate?: boolean }) => void
   state: ViewerState
 }
 
-type GlowElement = HTMLElement | SVGPathElement | SVGTextElement
+const WIKILINK_PATTERN = /\[\[([^\]]+)\]\]/g
+const NODE_FLASH_DURATION = 640
+const EDGE_PING_DURATION = 520
+const LONG_PRESS_DURATION = 450
+const DOUBLE_TAP_INTERVAL = 320
+const DOUBLE_TAP_DISTANCE = 28
 
 type GlowController = {
-  value: number
-  target: number
-  raf: number | null
-  step: (timestamp: number) => void
+  flash: (element: Element | null | undefined, className: string, duration: number) => void
+  toggle: (element: Element | null | undefined, className: string, active: boolean) => void
+  cancel: (element: Element | null | undefined, className: string) => void
+  prune: () => void
 }
 
-type IdleCallback = (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void
+const now = (): number => {
+  if (typeof performance !== "undefined" && typeof performance.now === "function") {
+    return performance.now()
+  }
+  return Date.now()
+}
 
-const WIKILINK_PATTERN = /\[\[([^\]]+)\]\]/g
-const EDGE_FLASH_DURATION = 480
-const NODE_FLASH_DURATION = 640
+const scheduleFrame = (callback: (time: number) => void): number => {
+  if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+    return window.requestAnimationFrame((time) => callback(time))
+  }
+  return setTimeout(() => callback(now()), 16)
+}
 
-const glowRegistry = new WeakMap<GlowElement, Map<string, GlowController>>()
-
-const scheduleIdle = (callback: () => void, timeout = 48) => {
-  if (typeof window === "undefined") {
+const cancelFrame = (handle: number | null | undefined) => {
+  if (handle == null) {
     return
   }
-  const idleWindow = window as Window & { requestIdleCallback?: (cb: IdleCallback, opts?: { timeout?: number }) => number }
-  if (typeof idleWindow.requestIdleCallback === "function") {
-    idleWindow.requestIdleCallback(() => callback(), { timeout })
+  if (typeof window !== "undefined" && typeof window.cancelAnimationFrame === "function") {
+    window.cancelAnimationFrame(handle)
   } else {
-    window.setTimeout(callback, timeout)
+    clearTimeout(handle)
   }
 }
 
-function setGlowTarget(element: GlowElement, property: string, target: number, options?: { immediate?: boolean }) {
-  let propertyMap = glowRegistry.get(element)
-  if (!propertyMap) {
-    propertyMap = new Map<string, GlowController>()
-    glowRegistry.set(element, propertyMap)
+const scheduleIdle = (callback: () => void) => {
+  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+    const idle = window.requestIdleCallback as unknown as (cb: () => void) => number
+    idle(() => callback())
+    return
+  }
+  setTimeout(callback, 48)
+}
+
+const createGlowController = (): GlowController => {
+  const entries = new Map<Element, Map<string, number>>()
+  let scheduled = false
+
+  const ensureScheduled = () => {
+    if (scheduled) return
+    scheduled = true
+    scheduleFrame(step)
   }
 
-  let controller = propertyMap.get(property)
-  if (!controller) {
-    controller = {
-      value: Number.parseFloat(element.style.getPropertyValue(property)) || 0,
-      target,
-      raf: null,
-      step: () => {},
-    }
-
-    controller.step = () => {
-      const delta = controller!.target - controller!.value
-      if (Math.abs(delta) <= 0.003) {
-        controller!.value = controller!.target
-        element.style.setProperty(property, controller!.value.toFixed(3))
-        controller!.raf = null
-        return
+  const step = (time: number) => {
+    entries.forEach((classMap, element) => {
+      classMap.forEach((expiry, className) => {
+        if (time >= expiry) {
+          element.classList.remove(className)
+          classMap.delete(className)
+        }
+      })
+      if (classMap.size === 0) {
+        entries.delete(element)
       }
-      controller!.value += delta * 0.22
-      element.style.setProperty(property, controller!.value.toFixed(3))
-      controller!.raf = window.requestAnimationFrame(controller!.step)
+    })
+
+    if (entries.size > 0) {
+      scheduleFrame(step)
+    } else {
+      scheduled = false
     }
-
-    propertyMap.set(property, controller)
   }
 
-  controller.target = target
-
-  if (options?.immediate) {
-    controller.value = target
-    element.style.setProperty(property, controller.value.toFixed(3))
-    if (controller.raf !== null) {
-      window.cancelAnimationFrame(controller.raf)
-      controller.raf = null
+  const register = (element: Element, className: string, duration: number) => {
+    const expiry = now() + duration
+    let classMap = entries.get(element)
+    if (!classMap) {
+      classMap = new Map<string, number>()
+      entries.set(element, classMap)
     }
-    return
+    classMap.set(className, expiry)
+    ensureScheduled()
   }
 
-  if (controller.raf === null) {
-    controller.raf = window.requestAnimationFrame(controller.step)
+  const clear = (element: Element, className?: string) => {
+    const classMap = entries.get(element)
+    if (!classMap) {
+      return
+    }
+    if (className) {
+      classMap.delete(className)
+    } else {
+      classMap.clear()
+    }
+    if (classMap.size === 0) {
+      entries.delete(element)
+    }
   }
-}
 
-function animateGlow(element: GlowElement | null | undefined, property: string, active: boolean) {
-  if (!element) {
-    return
+  return {
+    flash: (element, className, duration) => {
+      if (!element) return
+      element.classList.add(className)
+      register(element, className, duration)
+    },
+    toggle: (element, className, active) => {
+      if (!element) return
+      if (active) {
+        element.classList.add(className)
+      } else {
+        element.classList.remove(className)
+        clear(element, className)
+      }
+    },
+    cancel: (element, className) => {
+      if (!element) return
+      element.classList.remove(className)
+      clear(element, className)
+    },
+    prune: () => {
+      const current = now()
+      entries.forEach((classMap, element) => {
+        classMap.forEach((expiry, className) => {
+          if (current >= expiry) {
+            element.classList.remove(className)
+            classMap.delete(className)
+          }
+        })
+        if (classMap.size === 0) {
+          entries.delete(element)
+        }
+      })
+      if (entries.size === 0) {
+        scheduled = false
+      }
+    },
   }
-  setGlowTarget(element, property, active ? 1 : 0)
-}
-
-function pulseGlow(element: GlowElement | null | undefined, property: string, peak = 1.18, hold = 360) {
-  if (!element) {
-    return
-  }
-  setGlowTarget(element, property, peak)
-  window.setTimeout(() => {
-    scheduleIdle(() => setGlowTarget(element, property, 0))
-  }, hold)
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -245,8 +295,6 @@ function createNodeElement(
   el.style.height = `${node.height}px`
   el.dataset.nodeId = node.id
   el.tabIndex = 0
-  el.style.setProperty("--canvas-node-glow", "0")
-  el.style.setProperty("--canvas-node-ping", "0")
 
   if (node.background) {
     el.style.setProperty("--canvas-node-bg", node.background)
@@ -317,6 +365,7 @@ function renderEdges(
   edges: CanvasEdge[] | undefined,
   offset: Point,
   nodeElements: Map<string, HTMLDivElement>,
+  glow: GlowController,
 ): EdgeCollections {
   while (svg.firstChild) {
     svg.removeChild(svg.firstChild)
@@ -375,7 +424,6 @@ function renderEdges(
     path.dataset.edgeId = edgeId
     path.dataset.fromNode = edge.fromNode
     path.dataset.toNode = edge.toNode
-    path.style.setProperty("--canvas-edge-glow", "0")
     group.append(path)
 
     registerNodeEdge(edge.fromNode, edgeId)
@@ -391,45 +439,57 @@ function renderEdges(
       text.setAttribute("y", labelY.toString())
       text.setAttribute("class", "canvas-edge-label")
       text.dataset.edgeId = edgeId
-      text.style.setProperty("--canvas-edge-label-glow", "0")
       group.append(text)
     }
 
     const fromElement = nodeElements.get(edge.fromNode)
     const toElement = nodeElements.get(edge.toNode)
 
-    const toggleActive = (active: boolean) => {
-      animateGlow(path, "--canvas-edge-glow", active)
-      path.classList.toggle("canvas-edge-active", active)
-      if (text) {
-        animateGlow(text, "--canvas-edge-label-glow", active)
-        text.classList.toggle("canvas-edge-label-active", active)
+    const toggleNodeClass = (
+      element: HTMLDivElement | undefined,
+      className: string,
+      active: boolean,
+    ) => {
+      if (!element || element.dataset.nodeType === "group") {
+        return
       }
-      if (fromElement && fromElement.dataset.nodeType !== "group") {
-        animateGlow(fromElement, "--canvas-node-glow", active)
-        fromElement.classList.toggle("canvas-node-active", active)
-      }
-      if (toElement && toElement.dataset.nodeType !== "group") {
-        animateGlow(toElement, "--canvas-node-glow", active)
-        toElement.classList.toggle("canvas-node-active", active)
-      }
+      glow.toggle(element, className, active)
     }
 
-    const activate = () => toggleActive(true)
-    const deactivate = () => toggleActive(false)
-    const flash = () => {
-      activate()
-      pulseGlow(path, "--canvas-edge-glow", 1.22, EDGE_FLASH_DURATION)
+    const pingNode = (element: HTMLDivElement | undefined) => {
+      if (!element || element.dataset.nodeType === "group") {
+        return
+      }
+      glow.flash(element, "canvas-node-ping", NODE_FLASH_DURATION)
+    }
+
+    const toggleActive = (active: boolean) => {
+      glow.toggle(path, "canvas-edge-active", active)
       if (text) {
-        pulseGlow(text, "--canvas-edge-label-glow", 1.12, EDGE_FLASH_DURATION)
+        glow.toggle(text, "canvas-edge-label-active", active)
       }
-      if (fromElement && fromElement.dataset.nodeType !== "group") {
-        pulseGlow(fromElement, "--canvas-node-ping", 1.18, EDGE_FLASH_DURATION)
+      toggleNodeClass(fromElement, "canvas-node-active", active)
+      toggleNodeClass(toElement, "canvas-node-active", active)
+    }
+
+    const pingEdge = () => {
+      glow.flash(path, "canvas-edge-ping", EDGE_PING_DURATION)
+      if (text) {
+        glow.flash(text, "canvas-edge-ping", EDGE_PING_DURATION)
       }
-      if (toElement && toElement.dataset.nodeType !== "group") {
-        pulseGlow(toElement, "--canvas-node-ping", 1.18, EDGE_FLASH_DURATION)
-      }
-      window.setTimeout(() => deactivate(), EDGE_FLASH_DURATION)
+      pingNode(fromElement)
+      pingNode(toElement)
+    }
+
+    const activate = () => {
+      toggleActive(true)
+      pingEdge()
+    }
+
+    const deactivate = () => toggleActive(false)
+
+    const flash = () => {
+      pingEdge()
     }
 
     path.addEventListener("pointerenter", activate)
@@ -460,11 +520,14 @@ function renderEdges(
 function setupInteractions(viewer: HTMLElement, state: ViewerState): InteractionControls {
   const viewport = viewer.querySelector<HTMLDivElement>(".canvas-viewport")
   const inner = viewer.querySelector<HTMLDivElement>(".canvas-inner")
+  const overlay = viewer.querySelector<HTMLDivElement>(".canvas-overlay")
+  let fullscreenBaseline: { scale: number; translateX: number; translateY: number } | null = null
   if (!viewport || !inner) {
     return {
       cleanup: () => {},
       applyTransform: () => {},
       focusCanvasPoint: () => {},
+      fitToViewport: () => {},
       state,
     }
   }
@@ -479,14 +542,26 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
   let touchDistance: number | null = null
   let touchCenter: Point | null = null
   let pinchVelocity = 0
-  let pinchMomentumFrame: number | null = null
-  let pinchMomentumCenter: Point | null = null
-  let pinchActive = false
+  let pinchRaf: number | null = null
+  let pinchLastCenter: Point | null = null
+  let lastTapTime = 0
+  let lastTapPoint: Point | null = null
+
+  const stopPinchMomentum = () => {
+    if (pinchRaf !== null) {
+      cancelFrame(pinchRaf)
+      pinchRaf = null
+    }
+    pinchVelocity = 0
+  }
 
   const applyTransform = () => {
     inner.style.transform = `translate(${state.translateX}px, ${state.translateY}px) scale(${state.scale})`
     viewer.dataset["scale"] = state.scale.toFixed(2)
     viewer.dataset["translate"] = `${state.translateX},${state.translateY}`
+    viewer.style.setProperty("--canvas-scale", state.scale.toFixed(3))
+    viewer.style.setProperty("--canvas-pan-x", `${state.translateX}`)
+    viewer.style.setProperty("--canvas-pan-y", `${state.translateY}`)
   }
 
   const withAnimatedTransform = (callback: () => void, animate: boolean) => {
@@ -495,7 +570,7 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
     }
     callback()
     if (animate) {
-      window.setTimeout(() => {
+      setTimeout(() => {
         inner.style.transition = ""
       }, 240)
     }
@@ -523,30 +598,53 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
     viewport.dataset["panning"] = "false"
   }
 
-  const stopPinchMomentum = () => {
-    if (pinchMomentumFrame !== null) {
-      window.cancelAnimationFrame(pinchMomentumFrame)
-      pinchMomentumFrame = null
+  const fitToViewport = (options?: { animate?: boolean }) => {
+    const rect = viewport.getBoundingClientRect()
+    if (rect.width <= 0 || rect.height <= 0) {
+      return
     }
+    const fitScale = clamp(
+      Math.min(rect.width / state.width, rect.height / state.height),
+      state.minScale,
+      state.maxScale,
+    )
+    if (!Number.isFinite(fitScale) || fitScale <= 0) {
+      return
+    }
+    const translateX = (rect.width - state.width * fitScale) / 2
+    const translateY = (rect.height - state.height * fitScale) / 2
+    withAnimatedTransform(() => {
+      state.scale = fitScale
+      state.translateX = translateX
+      state.translateY = translateY
+      applyTransform()
+    }, options?.animate ?? true)
+  }
+
+  const continuePinchMomentum = () => {
+    if (!pinchLastCenter) {
+      pinchRaf = null
+      pinchVelocity = 0
+      return
+    }
+    pinchVelocity *= 0.88
+    if (Math.abs(pinchVelocity) < 0.0015) {
+      pinchVelocity = 0
+      pinchRaf = null
+      return
+    }
+    zoomAroundPoint(pinchLastCenter.x, pinchLastCenter.y, 1 + pinchVelocity)
+    pinchRaf = scheduleFrame(continuePinchMomentum)
   }
 
   const startPinchMomentum = () => {
-    if (!pinchMomentumCenter) {
+    if (!pinchLastCenter) {
       return
     }
-    stopPinchMomentum()
-    const run = () => {
-      pinchVelocity *= 0.82
-      if (Math.abs(pinchVelocity) <= 0.002) {
-        pinchMomentumFrame = null
-        pinchVelocity = 0
-        return
-      }
-      const factor = clamp(1 + pinchVelocity, 0.75, 1.25)
-      zoomAroundPoint(pinchMomentumCenter!.x, pinchMomentumCenter!.y, factor)
-      pinchMomentumFrame = window.requestAnimationFrame(run)
+    if (pinchRaf !== null) {
+      cancelFrame(pinchRaf)
     }
-    pinchMomentumFrame = window.requestAnimationFrame(run)
+    pinchRaf = scheduleFrame(continuePinchMomentum)
   }
 
   const onPointerDown = (event: PointerEvent) => {
@@ -558,7 +656,33 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
       return
     }
 
+    viewer.dispatchEvent(new CustomEvent("canvas:interaction"))
+
+    if (event.pointerType === "touch" && activeTouches.size === 0) {
+      const currentTime = now()
+      if (currentTime - lastTapTime < DOUBLE_TAP_INTERVAL && lastTapPoint) {
+        const dx = event.clientX - lastTapPoint.x
+        const dy = event.clientY - lastTapPoint.y
+        if (dx * dx + dy * dy <= DOUBLE_TAP_DISTANCE * DOUBLE_TAP_DISTANCE) {
+          lastTapTime = 0
+          lastTapPoint = null
+          stopPinchMomentum()
+          viewer.dispatchEvent(
+            new CustomEvent("canvas:dbltap", { detail: { x: event.clientX, y: event.clientY } }),
+          )
+          event.preventDefault()
+          return
+        }
+      }
+      lastTapTime = currentTime
+      lastTapPoint = { x: event.clientX, y: event.clientY }
+    } else if (event.pointerType !== "touch") {
+      lastTapTime = 0
+      lastTapPoint = null
+    }
+
     stopPinchMomentum()
+
     if (event.pointerType === "touch") {
       activeTouches.set(event.pointerId, { x: event.clientX, y: event.clientY })
       if (activeTouches.size === 2) {
@@ -567,8 +691,6 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
         const dy = touches[1].y - touches[0].y
         touchDistance = Math.hypot(dx, dy)
         touchCenter = { x: touches[0].x + dx / 2, y: touches[0].y + dy / 2 }
-        pinchActive = true
-        pinchMomentumCenter = touchCenter
         isPanning = false
       } else if (activeTouches.size === 1) {
         isPanning = true
@@ -603,11 +725,10 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
         const newDistance = Math.hypot(dx, dy)
         const center = { x: touches[0].x + dx / 2, y: touches[0].y + dy / 2 }
         if (touchDistance && touchDistance > 0) {
-          const deltaRatio = newDistance / touchDistance
-          pinchVelocity = (deltaRatio - 1) * 0.65
-          const factor = clamp(1 + pinchVelocity, 0.75, 1.25)
-          pinchMomentumCenter = center
-          zoomAroundPoint(center.x, center.y, factor)
+          const deltaScale = newDistance / touchDistance
+          zoomAroundPoint(center.x, center.y, deltaScale)
+          const delta = deltaScale - 1
+          pinchVelocity = pinchVelocity * 0.45 + delta * 0.55
         }
         if (touchCenter) {
           const rect = viewport.getBoundingClientRect()
@@ -621,14 +742,21 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
         }
         touchDistance = newDistance
         touchCenter = center
-        pinchActive = true
-      } else if (isPanning) {
-        const dx = event.clientX - startX
-        const dy = event.clientY - startY
-        const rect = viewport.getBoundingClientRect()
-        state.translateX = clamp(startTranslateX + dx, rect.width - state.width * state.scale, 0)
-        state.translateY = clamp(startTranslateY + dy, rect.height - state.height * state.scale, 0)
-        applyTransform()
+        pinchLastCenter = { ...center }
+      } else {
+        pinchVelocity = 0
+        if (isPanning) {
+          const dx = event.clientX - startX
+          const dy = event.clientY - startY
+          const rect = viewport.getBoundingClientRect()
+          state.translateX = clamp(startTranslateX + dx, rect.width - state.width * state.scale, 0)
+          state.translateY = clamp(
+            startTranslateY + dy,
+            rect.height - state.height * state.scale,
+            0,
+          )
+          applyTransform()
+        }
       }
       return
     }
@@ -645,14 +773,20 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
   }
 
   const endPan = (event: PointerEvent) => {
-    let shouldStartMomentum = false
     if (event.pointerType === "touch") {
+      const previousCenter = touchCenter
       activeTouches.delete(event.pointerId)
       if (activeTouches.size < 2) {
-        shouldStartMomentum = pinchActive && Math.abs(pinchVelocity) > 0.001
-        pinchActive = false
         touchDistance = null
         touchCenter = null
+        if (previousCenter) {
+          pinchLastCenter = { ...previousCenter }
+        }
+        if (Math.abs(pinchVelocity) > 0.0015) {
+          startPinchMomentum()
+        } else {
+          stopPinchMomentum()
+        }
       }
     }
     if (viewport.hasPointerCapture(event.pointerId)) {
@@ -660,22 +794,17 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
     }
     if (!isPanning) {
       viewport.dataset["panning"] = "false"
-      if (shouldStartMomentum) {
-        startPinchMomentum()
-      }
       return
     }
     isPanning = false
     viewport.dataset["panning"] = "false"
-    if (shouldStartMomentum) {
-      startPinchMomentum()
-    }
   }
 
   const onPointerLeave = () => {
     if (!isPanning) return
     isPanning = false
     viewport.dataset["panning"] = "false"
+    stopPinchMomentum()
   }
 
   viewport.addEventListener("pointerdown", onPointerDown)
@@ -686,6 +815,7 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
 
   const onWheel = (event: WheelEvent) => {
     event.preventDefault()
+    stopPinchMomentum()
     const zoomFactor = event.deltaY < 0 ? 1.1 : 0.9
     zoomAroundPoint(event.clientX, event.clientY, zoomFactor)
   }
@@ -693,14 +823,16 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
   viewport.addEventListener("wheel", onWheel, { passive: false })
 
   const additionalCleanup: Array<() => void> = []
-  let savedTransform: { scale: number; translateX: number; translateY: number } | null = null
-  let wasFullscreen = false
 
-  const fullscreenButton = viewer.querySelector<HTMLButtonElement>(".canvas-button[data-action='fullscreen']")
+  const fullscreenButton = viewer.querySelector<HTMLButtonElement>(
+    ".canvas-button[data-action='fullscreen']",
+  )
 
   const getFullscreenElement = (): Element | null => {
     const doc = document as FullscreenDocument
-    return document.fullscreenElement ?? doc.webkitFullscreenElement ?? doc.msFullscreenElement ?? null
+    return (
+      document.fullscreenElement ?? doc.webkitFullscreenElement ?? doc.msFullscreenElement ?? null
+    )
   }
 
   const requestFullscreen = (element: HTMLElement) => {
@@ -734,28 +866,10 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
   const updateFullscreenState = () => {
     const isFullscreen = getFullscreenElement() === viewer
     viewer.dataset.fullscreen = isFullscreen ? "true" : "false"
-    if (isFullscreen && !wasFullscreen) {
-      savedTransform = { scale: state.scale, translateX: state.translateX, translateY: state.translateY }
-      const rect = viewport.getBoundingClientRect()
-      const fitScale = Math.min(rect.width / state.width, rect.height / state.height)
-      if (Number.isFinite(fitScale) && fitScale > 0) {
-        state.scale = clamp(fitScale, state.minScale, state.maxScale)
-        state.translateX = (rect.width - state.width * state.scale) / 2
-        state.translateY = (rect.height - state.height * state.scale) / 2
-      }
-      updateTranslationBounds()
-      applyTransform()
-    } else if (!isFullscreen && wasFullscreen) {
-      if (savedTransform) {
-        state.scale = clamp(savedTransform.scale, state.minScale, state.maxScale)
-        state.translateX = savedTransform.translateX
-        state.translateY = savedTransform.translateY
-        savedTransform = null
-      }
-      updateTranslationBounds()
-      applyTransform()
+    if (overlay) {
+      overlay.dataset.fullscreen = isFullscreen ? "true" : "false"
     }
-    wasFullscreen = isFullscreen
+    stopPinchMomentum()
     if (!fullscreenButton) return
     fullscreenButton.setAttribute("aria-pressed", isFullscreen ? "true" : "false")
     const labelKey = isFullscreen ? "tooltipExit" : "tooltipEnter"
@@ -768,6 +882,31 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
     if (tooltip) {
       fullscreenButton.setAttribute("aria-label", tooltip)
       fullscreenButton.title = tooltip
+    }
+    const rect = viewport.getBoundingClientRect()
+    if (isFullscreen) {
+      if (!fullscreenBaseline) {
+        fullscreenBaseline = {
+          scale: state.scale,
+          translateX: state.translateX,
+          translateY: state.translateY,
+        }
+      }
+      const fitScale = Math.min(rect.width / state.width, rect.height / state.height)
+      if (Number.isFinite(fitScale) && fitScale > 0) {
+        state.scale = clamp(fitScale, state.minScale, state.maxScale)
+        state.translateX = (rect.width - state.width * state.scale) / 2
+        state.translateY = (rect.height - state.height * state.scale) / 2
+        updateTranslationBounds()
+        applyTransform()
+      }
+    } else if (fullscreenBaseline) {
+      state.scale = fullscreenBaseline.scale
+      state.translateX = fullscreenBaseline.translateX
+      state.translateY = fullscreenBaseline.translateY
+      fullscreenBaseline = null
+      updateTranslationBounds()
+      applyTransform()
     }
   }
 
@@ -805,6 +944,7 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
   }
 
   const updateScale = (factor: number) => {
+    stopPinchMomentum()
     const rect = viewport.getBoundingClientRect()
     const centerX = rect.left + rect.width / 2
     const centerY = rect.top + rect.height / 2
@@ -823,12 +963,7 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
           updateScale(0.9)
           break
         case "fit": {
-          const rect = viewport.getBoundingClientRect()
-          const fitScale = Math.min(rect.width / state.width, rect.height / state.height)
-          state.scale = clamp(fitScale, state.minScale, state.maxScale)
-          state.translateX = (rect.width - state.width * state.scale) / 2
-          state.translateY = (rect.height - state.height * state.scale) / 2
-          applyTransform()
+          fitToViewport({ animate: true })
           break
         }
         case "fullscreen":
@@ -843,10 +978,12 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
           break
         case "reset":
         default: {
-          state.scale = 1
-          state.translateX = 0
-          state.translateY = 0
-          applyTransform()
+          withAnimatedTransform(() => {
+            state.scale = 1
+            state.translateX = 0
+            state.translateY = 0
+            applyTransform()
+          }, true)
         }
       }
     }
@@ -884,6 +1021,7 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
 
   return {
     cleanup: () => {
+      stopPinchMomentum()
       viewport.removeEventListener("pointerdown", onPointerDown)
       viewport.removeEventListener("pointermove", onPointerMove)
       viewport.removeEventListener("pointerup", endPan)
@@ -893,12 +1031,10 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Interaction
       buttonHandlers.forEach((cleanup) => cleanup())
       resizeObserver.disconnect()
       additionalCleanup.forEach((cleanup) => cleanup())
-      if (pinchMomentumFrame !== null) {
-        window.cancelAnimationFrame(pinchMomentumFrame)
-      }
     },
     applyTransform,
     focusCanvasPoint,
+    fitToViewport,
     state,
   }
 }
@@ -910,9 +1046,11 @@ function initialiseViewer(viewer: HTMLElement) {
   const script = viewer.querySelector<HTMLScriptElement>("script[data-canvas]")
   const nodesContainer = viewer.querySelector<HTMLDivElement>(".canvas-nodes")
   const svg = viewer.querySelector<SVGSVGElement>(".canvas-edges")
-  if (!script || !script.textContent || !nodesContainer || !svg) return
+  const viewport = viewer.querySelector<HTMLDivElement>(".canvas-viewport")
+  const overlay = viewer.querySelector<HTMLDivElement>(".canvas-overlay")
+  const overlayPanel = overlay?.querySelector<HTMLDivElement>(".canvas-overlay-panel") ?? null
+  if (!script || !script.textContent || !nodesContainer || !svg || !viewport) return
 
-  const viewerCleanup: Cleanup[] = []
   let data: CanvasData
   try {
     data = JSON.parse(script.textContent) as CanvasData
@@ -939,6 +1077,18 @@ function initialiseViewer(viewer: HTMLElement) {
   const nodeMap = new Map<string, CanvasNode>()
   const nodeElements = new Map<string, HTMLDivElement>()
   const wikiLinks: WikiLinkRecord[] = []
+  const glow = createGlowController()
+  const focusExpiry = new Map<string, number>()
+  let activeNodeId: string | null = null
+  const longPressTimers = new Map<number, number>()
+  const pointerOrigins = new Map<number, Point>()
+  const cancelLongPress = (pointerId: number) => {
+    const timer = longPressTimers.get(pointerId)
+    if (timer) {
+      clearTimeout(timer)
+      longPressTimers.delete(pointerId)
+    }
+  }
 
   const registerWikiLink = (record: WikiLinkRecord) => {
     wikiLinks.push(record)
@@ -962,17 +1112,22 @@ function initialiseViewer(viewer: HTMLElement) {
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
   svg.setAttribute("width", width.toString())
   svg.setAttribute("height", height.toString())
-  const { elements: edgeElements, byNode: edgesByNode } = renderEdges(svg, nodeMap, edges, offset, nodeElements)
+  const { elements: edgeElements, byNode: edgesByNode } = renderEdges(
+    svg,
+    nodeMap,
+    edges,
+    offset,
+    nodeElements,
+    glow,
+  )
 
-  const highlightNodeEdges = (nodeId: string, active: boolean) => {
+  const highlightNodeEdges = (nodeId: string, active: boolean, options?: { ping?: boolean }) => {
     const element = nodeElements.get(nodeId)
-    if (!element) {
-      return
-    }
-    const nodeType = element.dataset.nodeType
-    if (nodeType !== "group") {
-      element.classList.toggle("canvas-node-active", active)
-      animateGlow(element, "--canvas-node-glow", active)
+    if (element && element.dataset.nodeType !== "group") {
+      glow.toggle(element, "canvas-node-active", active)
+      if (options?.ping && active) {
+        glow.flash(element, "canvas-node-ping", NODE_FLASH_DURATION)
+      }
     }
     const edgeIds = edgesByNode.get(nodeId)
     if (!edgeIds) {
@@ -981,43 +1136,194 @@ function initialiseViewer(viewer: HTMLElement) {
     edgeIds.forEach((edgeId) => {
       const record = edgeElements.get(edgeId)
       if (!record) return
-      record.path.classList.toggle("canvas-edge-active", active)
-      animateGlow(record.path, "--canvas-edge-glow", active)
+      glow.toggle(record.path, "canvas-edge-active", active)
       if (record.label) {
-        record.label.classList.toggle("canvas-edge-label-active", active)
-        animateGlow(record.label, "--canvas-edge-label-glow", active)
+        glow.toggle(record.label, "canvas-edge-label-active", active)
+      }
+      if (options?.ping && active) {
+        glow.flash(record.path, "canvas-edge-ping", EDGE_PING_DURATION)
+        if (record.label) {
+          glow.flash(record.label, "canvas-edge-ping", EDGE_PING_DURATION)
+        }
       }
       const otherId = record.from === nodeId ? record.to : record.from
       if (otherId !== nodeId) {
         const otherNode = nodeElements.get(otherId)
         if (otherNode && otherNode.dataset.nodeType !== "group") {
-          otherNode.classList.toggle("canvas-node-connected", active)
-          animateGlow(otherNode, "--canvas-node-glow", active)
+          glow.toggle(otherNode, "canvas-node-connected", active)
+          if (options?.ping && active) {
+            glow.flash(otherNode, "canvas-node-ping", NODE_FLASH_DURATION)
+          }
         }
       }
     })
   }
+
+  const closeMenu = () => {
+    if (!overlay || !overlayPanel) {
+      return
+    }
+    const activeId = overlayPanel.dataset.nodeId
+    if (activeId) {
+      const element = nodeElements.get(activeId)
+      if (!element || (!element.matches(":hover") && element !== document.activeElement)) {
+        highlightNodeEdges(activeId, false)
+      }
+    }
+    overlay.dataset.menu = "false"
+    overlayPanel.hidden = true
+    overlayPanel.innerHTML = ""
+    overlayPanel.removeAttribute("data-node-id")
+    overlayPanel.style.removeProperty("--menu-left")
+    overlayPanel.style.removeProperty("--menu-top")
+  }
+
+  const openMenu = (nodeId: string, point: Point) => {
+    if (!overlay || !overlayPanel) {
+      return
+    }
+    const node = nodeMap.get(nodeId)
+    if (!node) {
+      return
+    }
+    closeMenu()
+    overlay.dataset.menu = "true"
+    overlayPanel.hidden = false
+    overlayPanel.dataset.nodeId = nodeId
+    overlayPanel.tabIndex = -1
+    activeNodeId = nodeId
+    highlightNodeEdges(nodeId, true, { ping: true })
+    const rect = viewport.getBoundingClientRect()
+    const leftPercent = clamp(((point.x - rect.left) / rect.width) * 100, 8, 92)
+    const topPercent = clamp(((point.y - rect.top) / rect.height) * 100, 6, 92)
+    overlayPanel.style.setProperty("--menu-left", `${leftPercent}%`)
+    overlayPanel.style.setProperty("--menu-top", `${topPercent}%`)
+    overlayPanel.innerHTML = ""
+
+    const title = document.createElement("p")
+    title.className = "canvas-overlay-title"
+    title.textContent = node.label ?? node.text?.split(/\r?\n/)[0] ?? node.id
+    overlayPanel.append(title)
+
+    const addButton = (label: string, handler: () => void) => {
+      const button = document.createElement("button")
+      button.type = "button"
+      button.className = "canvas-overlay-item"
+      button.textContent = label
+      button.addEventListener("click", () => {
+        handler()
+        closeMenu()
+      })
+      overlayPanel.append(button)
+    }
+
+    addButton("Odağı bu karta getir", () => focusNode(nodeId, { animate: true, minScale: 0.85 }))
+
+    if (node.file?.path) {
+      addButton("Dosyayı aç", () => {
+        if (typeof window !== "undefined") {
+          window.location.href = node.file!.path!
+        }
+      })
+    } else if (node.url) {
+      addButton("Bağlantıyı aç", () => {
+        if (typeof window !== "undefined") {
+          window.open(node.url!, "_blank", "noopener,noreferrer")
+        }
+      })
+    }
+
+    addButton("Bağlantıları vurgula", () => {
+      highlightNodeEdges(nodeId, true, { ping: true })
+    })
+
+    requestAnimationFrame(() => overlayPanel.focus({ preventScroll: true }))
+  }
+
+  if (overlay) {
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) {
+        closeMenu()
+      }
+    })
+  }
+
+  overlayPanel?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault()
+      closeMenu()
+    }
+  })
+
+  overlayPanel?.addEventListener("focusout", (event) => {
+    if (!overlayPanel.contains(event.relatedTarget as Node)) {
+      closeMenu()
+    }
+  })
+
+  viewer.addEventListener("canvas:interaction", () => closeMenu())
 
   nodeElements.forEach((element, nodeId) => {
     const nodeType = element.dataset.nodeType
     if (nodeType === "group") {
       return
     }
-    const activate = () => highlightNodeEdges(nodeId, true)
-    const deactivate = () => highlightNodeEdges(nodeId, false)
-    element.addEventListener("pointerenter", activate)
-    element.addEventListener("pointerleave", deactivate)
-    element.addEventListener("focus", activate)
-    element.addEventListener("blur", deactivate)
-    element.addEventListener("pointerdown", (event) => {
-      if ((event.target as HTMLElement | null)?.closest("a, button")) {
+    const activate = () => {
+      activeNodeId = nodeId
+      highlightNodeEdges(nodeId, true, { ping: true })
+    }
+    const deactivate = () => {
+      if (focusExpiry.has(nodeId)) {
         return
       }
-      highlightNodeEdges(nodeId, true)
-      pulseGlow(element, "--canvas-node-ping", 1.2, NODE_FLASH_DURATION)
+      highlightNodeEdges(nodeId, false)
+    }
+    element.addEventListener("pointerenter", activate)
+    element.addEventListener("pointerleave", (event: PointerEvent) => {
+      pointerOrigins.delete(event.pointerId)
+      cancelLongPress(event.pointerId)
+      deactivate()
     })
-    element.addEventListener("pointerup", () => highlightNodeEdges(nodeId, false))
-    element.addEventListener("pointercancel", () => highlightNodeEdges(nodeId, false))
+    element.addEventListener("focus", activate)
+    element.addEventListener("blur", deactivate)
+    element.addEventListener("pointermove", (event: PointerEvent) => {
+      if (event.pointerType === "touch" || event.pointerType === "pen") {
+        pointerOrigins.set(event.pointerId, { x: event.clientX, y: event.clientY })
+      }
+    })
+    element.addEventListener("pointerdown", (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.closest("a, button, input, textarea")) {
+        return
+      }
+      viewer.dispatchEvent(new CustomEvent("canvas:interaction"))
+      activeNodeId = nodeId
+      highlightNodeEdges(nodeId, true, { ping: true })
+      if (event.pointerType === "touch" || event.pointerType === "pen") {
+        const origin = { x: event.clientX, y: event.clientY }
+        pointerOrigins.set(event.pointerId, origin)
+        cancelLongPress(event.pointerId)
+        const timer = window.setTimeout(() => {
+          longPressTimers.delete(event.pointerId)
+          const point = pointerOrigins.get(event.pointerId) ?? origin
+          openMenu(nodeId, point)
+        }, LONG_PRESS_DURATION)
+        longPressTimers.set(event.pointerId, timer)
+      }
+    })
+    const clearPointer = (event: PointerEvent) => {
+      pointerOrigins.delete(event.pointerId)
+      cancelLongPress(event.pointerId)
+    }
+    element.addEventListener("pointerup", clearPointer)
+    element.addEventListener("pointercancel", clearPointer)
+    element.addEventListener("click", (event) => {
+      const target = event.target as HTMLElement | null
+      if (target?.closest("a, button, input, textarea")) {
+        return
+      }
+      focusNode(nodeId, { animate: true, minScale: 0.75 })
+    })
   })
 
   const state: ViewerState = {
@@ -1030,22 +1336,22 @@ function initialiseViewer(viewer: HTMLElement) {
     height,
   }
 
-  const viewport = viewer.querySelector<HTMLDivElement>(".canvas-viewport")
-  if (viewport) {
-    const rect = viewport.getBoundingClientRect()
-    if (rect.width > 0 && rect.height > 0) {
-      const fitScale = clamp(Math.min(rect.width / width, rect.height / height), state.minScale, state.maxScale)
-      if (Number.isFinite(fitScale) && fitScale > 0) {
-        state.scale = fitScale
-        state.translateX = (rect.width - width * state.scale) / 2
-        state.translateY = (rect.height - height * state.scale) / 2
-      }
+  const initialRect = viewport.getBoundingClientRect()
+  if (initialRect.width > 0 && initialRect.height > 0) {
+    const fitScale = clamp(
+      Math.min(initialRect.width / width, initialRect.height / height),
+      state.minScale,
+      state.maxScale,
+    )
+    if (Number.isFinite(fitScale) && fitScale > 0) {
+      state.scale = fitScale
+      state.translateX = (initialRect.width - width * state.scale) / 2
+      state.translateY = (initialRect.height - height * state.scale) / 2
     }
   }
 
   const interactions = setupInteractions(viewer, state)
   interactions.applyTransform()
-  viewerCleanup.push(() => interactions.cleanup())
 
   const focusNode = (nodeId: string, options?: { animate?: boolean; minScale?: number }) => {
     const node = nodeMap.get(nodeId)
@@ -1053,23 +1359,65 @@ function initialiseViewer(viewer: HTMLElement) {
     if (!node || !element) {
       return
     }
+    activeNodeId = nodeId
+    closeMenu()
     const point: Point = {
       x: node.x - offset.x + node.width / 2,
       y: node.y - offset.y + node.height / 2,
     }
     interactions.focusCanvasPoint(point, options)
-    element.classList.add("canvas-node-flash")
-    highlightNodeEdges(nodeId, true)
-    pulseGlow(element, "--canvas-node-ping", 1.35, NODE_FLASH_DURATION + 120)
-    animateGlow(element, "--canvas-node-glow", true)
-    window.setTimeout(() => {
-      element.classList.remove("canvas-node-flash")
-      scheduleIdle(() => {
+    glow.flash(element, "canvas-node-flash", NODE_FLASH_DURATION)
+    glow.flash(element, "canvas-node-ping", NODE_FLASH_DURATION)
+    const highlightDuration = Math.max(NODE_FLASH_DURATION, EDGE_PING_DURATION)
+    focusExpiry.set(nodeId, now() + highlightDuration)
+    highlightNodeEdges(nodeId, true, { ping: true })
+
+    const release = () => {
+      const expiry = focusExpiry.get(nodeId)
+      if (!expiry) {
+        return
+      }
+      if (now() >= expiry) {
+        focusExpiry.delete(nodeId)
+        const currentElement = nodeElements.get(nodeId)
+        if (
+          currentElement &&
+          (currentElement.matches(":hover") || currentElement === document.activeElement)
+        ) {
+          highlightNodeEdges(nodeId, true)
+          return
+        }
         highlightNodeEdges(nodeId, false)
-        animateGlow(element, "--canvas-node-glow", false)
-      })
-    }, NODE_FLASH_DURATION)
+        return
+      }
+      scheduleFrame(release)
+    }
+    scheduleFrame(release)
+
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href)
+        url.hash = nodeId
+        if (window.history && typeof window.history.pushState === "function") {
+          const state = window.history.state ?? {}
+          window.history.pushState({ ...state, canvas: nodeId }, document.title, url.toString())
+        } else {
+          window.location.hash = nodeId
+        }
+      } catch (error) {
+        window.location.hash = nodeId
+      }
+    }
   }
+
+  viewer.addEventListener("canvas:dbltap", () => {
+    if (activeNodeId) {
+      focusNode(activeNodeId, { animate: true, minScale: 0.85 })
+    } else {
+      interactions.fitToViewport({ animate: true })
+    }
+    closeMenu()
+  })
 
   const targetMap = new Map<string, string>()
   const registerTarget = (value: string | null | undefined, nodeId: string) => {
@@ -1092,49 +1440,6 @@ function initialiseViewer(viewer: HTMLElement) {
     }
   })
 
-  const updateHistoryForNode = (nodeId: string, mode: "push" | "replace" = "push") => {
-    if (typeof window === "undefined") {
-      return
-    }
-    try {
-      const slug = encodeURIComponent(nodeId)
-      const { pathname, search } = window.location
-      const newUrl = `${pathname}${search}#canvas-${slug}`
-      if (mode === "push" && typeof window.history.pushState === "function") {
-        window.history.pushState({ canvasNode: nodeId }, "", newUrl)
-      } else if (typeof window.history.replaceState === "function") {
-        window.history.replaceState({ canvasNode: nodeId }, "", newUrl)
-      } else {
-        window.location.hash = `canvas-${slug}`
-      }
-    } catch (error) {
-      console.warn("Quartz: Failed to update canvas history", error)
-    }
-  }
-
-  const applyHashFocus = (mode: "replace" | "push" = "replace") => {
-    if (typeof window === "undefined") {
-      return
-    }
-    const rawHash = window.location.hash
-    if (!rawHash.startsWith("#canvas-")) {
-      return
-    }
-    const rawValue = decodeURIComponent(rawHash.slice("#canvas-".length))
-    if (nodeMap.has(rawValue)) {
-      focusNode(rawValue, { animate: mode !== "replace", minScale: 0.6 })
-      return
-    }
-    const normalised = normaliseKey(rawValue)
-    if (!normalised) {
-      return
-    }
-    const mapped = targetMap.get(normalised)
-    if (mapped) {
-      focusNode(mapped, { animate: mode !== "replace", minScale: 0.6 })
-    }
-  }
-
   wikiLinks.forEach((record) => {
     const targetId = targetMap.get(record.target)
     if (!targetId) {
@@ -1143,11 +1448,23 @@ function initialiseViewer(viewer: HTMLElement) {
       return
     }
     record.element.dataset.targetId = targetId
+    const showHighlight = () => highlightNodeEdges(targetId, true, { ping: true })
+    const hideHighlight = () => highlightNodeEdges(targetId, false)
     const triggerFocus = () => {
+      showHighlight()
       focusNode(targetId, { animate: true, minScale: 0.6 })
-      updateHistoryForNode(targetId, "push")
     }
-    record.element.addEventListener("click", triggerFocus)
+    record.element.addEventListener("click", (event) => {
+      event.preventDefault()
+      triggerFocus()
+    })
+    record.element.addEventListener("pointerenter", showHighlight)
+    record.element.addEventListener("pointerleave", hideHighlight)
+    record.element.addEventListener("pointerdown", showHighlight)
+    record.element.addEventListener("pointerup", hideHighlight)
+    record.element.addEventListener("pointercancel", hideHighlight)
+    record.element.addEventListener("focus", showHighlight)
+    record.element.addEventListener("blur", hideHighlight)
     record.element.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault()
@@ -1156,24 +1473,15 @@ function initialiseViewer(viewer: HTMLElement) {
     })
   })
 
-  if (typeof window !== "undefined") {
-    applyHashFocus("replace")
-    const onPopState = () => applyHashFocus("replace")
-    const onHashChange = () => applyHashFocus("replace")
-    window.addEventListener("popstate", onPopState)
-    window.addEventListener("hashchange", onHashChange)
-    viewerCleanup.push(() => {
-      window.removeEventListener("popstate", onPopState)
-      window.removeEventListener("hashchange", onHashChange)
-    })
-  }
+  scheduleIdle(() => glow.prune())
 
   viewer.dataset["loaded"] = "true"
   viewer.dataset.canvasInitialised = "true"
 
   if (typeof window !== "undefined" && typeof window.addCleanup === "function") {
     window.addCleanup(() => {
-      viewerCleanup.forEach((cleanup) => cleanup())
+      closeMenu()
+      interactions.cleanup()
       viewer.dataset.canvasInitialised = "false"
       viewer.dataset["loaded"] = "false"
     })

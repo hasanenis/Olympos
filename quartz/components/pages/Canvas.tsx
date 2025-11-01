@@ -40,23 +40,59 @@ const CanvasContent: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
 
   const nodeCount = safeData.nodes.length
   const edgeCount = safeData.edges?.length ?? 0
+  const slug = (fileData.slug ?? fileData.filePath ?? "canvas") as string
+  const viewerId = `canvas-${slug.replace(/[^a-z0-9-]+/gi, "-")}`
+  const viewportId = `${viewerId}-viewport`
 
   return (
     <article class="canvas-page">
-      <div class="canvas-viewer" data-node-count={nodeCount} data-edge-count={edgeCount}>
-        <div class="canvas-overlay" aria-hidden="true"></div>
-        <div class="canvas-toolbar" role="toolbar" aria-label="Canvas controls">
+      <div
+        class="canvas-viewer"
+        id={viewerId}
+        data-node-count={nodeCount}
+        data-edge-count={edgeCount}
+      >
+        <div
+          class="canvas-toolbar"
+          role="toolbar"
+          aria-label="Canvas controls"
+          aria-controls={viewportId}
+        >
           <div class="canvas-toolbar-group">
-            <button type="button" class="canvas-button" data-action="zoom-in" aria-label="Yakınlaştır">
+            <button
+              type="button"
+              class="canvas-button"
+              data-action="zoom-in"
+              aria-label="Yakınlaştır"
+              aria-controls={viewportId}
+            >
               +
             </button>
-            <button type="button" class="canvas-button" data-action="zoom-out" aria-label="Uzaklaştır">
+            <button
+              type="button"
+              class="canvas-button"
+              data-action="zoom-out"
+              aria-label="Uzaklaştır"
+              aria-controls={viewportId}
+            >
               –
             </button>
-            <button type="button" class="canvas-button" data-action="fit" aria-label="Sığdır">
+            <button
+              type="button"
+              class="canvas-button"
+              data-action="fit"
+              aria-label="Sığdır"
+              aria-controls={viewportId}
+            >
               ⤢
             </button>
-            <button type="button" class="canvas-button" data-action="reset" aria-label="Sıfırla">
+            <button
+              type="button"
+              class="canvas-button"
+              data-action="reset"
+              aria-label="Sıfırla"
+              aria-controls={viewportId}
+            >
               ↺
             </button>
             <button
@@ -69,6 +105,7 @@ const CanvasContent: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
               data-tooltip-exit="Tam ekranı kapat"
               aria-label="Tam ekran"
               aria-pressed="false"
+              aria-controls={viewportId}
             >
               ⛶
             </button>
@@ -78,11 +115,14 @@ const CanvasContent: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
             gezinin.
           </p>
         </div>
-        <div class="canvas-viewport">
+        <div class="canvas-viewport" id={viewportId} role="region" aria-live="polite">
           <div class="canvas-inner">
             <svg class="canvas-edges" aria-hidden="true"></svg>
             <div class="canvas-nodes" aria-hidden="true"></div>
           </div>
+        </div>
+        <div class="canvas-overlay" aria-hidden="true">
+          <div class="canvas-overlay-panel" role="menu" hidden></div>
         </div>
         <dl class="canvas-summary">
           <div>
