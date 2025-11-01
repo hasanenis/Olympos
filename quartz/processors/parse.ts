@@ -67,12 +67,12 @@ async function transpileWorkerScript() {
     plugins: [
       {
         name: "css-and-scripts-as-text",
-        setup(build) {
-          build.onLoad({ filter: /\.scss$/ }, (_) => ({
+        setup(build: { onLoad: (options: { filter: RegExp }, callback: (args: unknown) => { contents: string; loader: string }) => void }) {
+          build.onLoad({ filter: /\.scss$/ }, () => ({
             contents: "",
             loader: "text",
           }))
-          build.onLoad({ filter: /\.inline\.(ts|js)$/ }, (_) => ({
+          build.onLoad({ filter: /\.inline\.(ts|js)$/ }, () => ({
             contents: "",
             loader: "text",
           }))
@@ -91,8 +91,11 @@ export function createFileParser(ctx: BuildCtx, fps: FilePath[]) {
         const perf = new PerfTimer()
         const file = await read(fp)
 
+        const rawValue =
+          typeof file.value === "string" ? file.value : String(file.value ?? "")
+
         // strip leading and trailing whitespace
-        file.value = file.value.toString().trim()
+        file.value = rawValue.trim()
 
         // Text -> Text transforms
         for (const plugin of cfg.plugins.transformers.filter((p) => p.textTransform)) {
@@ -100,6 +103,7 @@ export function createFileParser(ctx: BuildCtx, fps: FilePath[]) {
         }
 
         // base data properties that plugins may use
+        file.data = file.data ?? {}
         file.data.filePath = file.path as FilePath
         file.data.relativePath = path.posix.relative(argv.directory, file.path) as FilePath
         file.data.slug = slugifyFilePath(file.data.relativePath)
@@ -190,28 +194,28 @@ export async function parseMarkdown(ctx: BuildCtx, fps: FilePath[]): Promise<Pro
       textToMarkdownPromises.push(pool.exec("parseMarkdown", [serializableCtx, chunk]))
     }
 
-    const mdResults: Array<MarkdownContent[]> = await Promise.all(
+    const mdResults = (await Promise.all(
       textToMarkdownPromises.map(async (promise) => {
         const result = await promise
         processedFiles += result.length
         log.updateText(`text->markdown ${styleText("gray", `${processedFiles}/${fps.length}`)}`)
         return result
       }),
-    ).catch(errorHandler)
+    ).catch(errorHandler)) as Array<MarkdownContent[]>
 
     const markdownToHtmlPromises: WorkerPromise<ProcessedContent[]>[] = []
     processedFiles = 0
     for (const mdChunk of mdResults) {
       markdownToHtmlPromises.push(pool.exec("processHtml", [serializableCtx, mdChunk]))
     }
-    const results: ProcessedContent[][] = await Promise.all(
+    const results = (await Promise.all(
       markdownToHtmlPromises.map(async (promise) => {
         const result = await promise
         processedFiles += result.length
         log.updateText(`markdown->html ${styleText("gray", `${processedFiles}/${fps.length}`)}`)
         return result
       }),
-    ).catch(errorHandler)
+    ).catch(errorHandler)) as ProcessedContent[][]
 
     res = results.flat()
     await pool.terminate()

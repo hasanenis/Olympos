@@ -1,3 +1,4 @@
+import fs from "fs/promises"
 import { Root } from "hast"
 import { GlobalConfiguration } from "../../cfg"
 import { getDate } from "../../components/Date"
@@ -7,6 +8,8 @@ import { QuartzEmitterPlugin } from "../types"
 import { toHtml } from "hast-util-to-html"
 import { write } from "./helpers"
 import { i18n } from "../../i18n"
+import { collectCanvasFileEntries } from "../../util/canvas"
+import type { CanvasData } from "../../components/pages/Canvas"
 
 export type ContentIndexMap = Map<FullSlug, ContentDetails>
 export type ContentDetails = {
@@ -117,6 +120,45 @@ export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
             description: file.data.description ?? "",
           })
         }
+      }
+
+      const canvasEntries = collectCanvasFileEntries(ctx)
+      for (const entry of canvasEntries) {
+        const slug = entry.slug!
+        if (linkIndex.has(slug)) {
+          continue
+        }
+
+        let contentText = ""
+        if (entry.relativePath) {
+          const canvasPath = joinSegments(ctx.argv.directory, entry.relativePath) as FilePath
+          try {
+            const raw = await fs.readFile(canvasPath, "utf-8")
+            const data = JSON.parse(raw) as CanvasData
+            contentText =
+              data.nodes
+                ?.map((node) =>
+                  [node.label, node.text]
+                    .filter((segment): segment is string => Boolean(segment && segment.trim()))
+                    .join(" "),
+                )
+                .filter((value): value is string => Boolean(value && value.trim()))
+                .join(" ") ?? ""
+          } catch (error) {
+            console.error(`Quartz: Failed to index canvas ${entry.relativePath}`, error)
+          }
+        }
+
+        const filePath = (entry.relativePath ?? entry.filePath ?? slug) as FilePath
+
+        linkIndex.set(slug, {
+          slug,
+          filePath,
+          title: entry.frontmatter?.title ?? slug,
+          links: [],
+          tags: entry.frontmatter?.tags ?? [],
+          content: contentText,
+        })
       }
 
       if (opts?.enableSiteMap) {

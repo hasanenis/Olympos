@@ -397,8 +397,11 @@ describe("FileTrie", () => {
       trie.add(data2)
       trie.add(data3)
       const path = trie.ancestryChain(["folder", "subfolder"])
+      if (!path) {
+        throw new Error("Expected ancestry path to be defined")
+      }
       assert.deepStrictEqual(path, [trie, trie.children[0], trie.children[0].children[0]])
-      assert.strictEqual(path[1].data, data3)
+      assert.strictEqual(path[1]?.data, data3)
     })
 
     test("should return path for partial path", () => {
@@ -409,6 +412,9 @@ describe("FileTrie", () => {
       }
       trie.add(data)
       const path = trie.ancestryChain(["folder"])
+      if (!path) {
+        throw new Error("Expected ancestry path to be defined")
+      }
       assert.deepStrictEqual(path, [trie, trie.children[0]])
     })
   })
