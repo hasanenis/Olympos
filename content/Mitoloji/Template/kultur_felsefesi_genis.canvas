@@ -1,0 +1,33 @@
+{
+	"nodes":[
+		{"id":"g_philo","type":"group","x":-140,"y":-590,"width":1940,"height":930,"label":"Felsefi Perspektifler"},
+		{"id":"g_exam","type":"group","x":-1200,"y":420,"width":2900,"height":500,"label":"Sınav Hazırlık Yolları (Chat.pdf)"},
+		{"id":"g_basics","type":"group","x":-1180,"y":-640,"width":1040,"height":720,"label":"Temeller"},
+		{"id":"e_cerceve","type":"text","text":"📐 **Cevap Çerçevesi**\n• Tanım→unsurlar→özellikler→medeniyet ayrımı\n• Felsefi dayanak: Herder/Nietzsche/Spengler/Geertz\n• Örnek/alıntı→ kısa analiz→ sonuç","x":-560,"y":460,"width":520,"height":200,"color":"#475569"},
+		{"id":"e_ing_premod","type":"text","text":"🏺 **Premodern İngiltere İçin İpuçları**\n• Mitoloji, kilise, feodal yapı, destan (Beowulf)\n• Latin-Hristiyan gelenek, ahlak ve ritüel ağı","x":20,"y":460,"width":520,"height":200,"color":"#64748b"},
+		{"id":"e_renaissance","type":"text","text":"🎭 **Rönesans & Benlik**\n• Hümanizm, birey, klasiklere dönüş\n• Shakespeare: trajik benlik ve karar/özgürlük gerilimi","x":560,"y":460,"width":520,"height":200,"color":"#6b7280"},
+		{"id":"e_modern","type":"text","text":"⚙️ **Modernleşme Köprüsü**\n• Bacon – deneyci rasyonalite / ütopya-toplum müh.\n• More – etik/politik ütopya\n• Machiavelli – erdem/başarı gerilimi, araç-sonuç","x":1100,"y":460,"width":560,"height":220,"color":"#7f8ea3"},
+		{"id":"p_nietzsche","type":"text","text":"🟥 **Nietzsche – Bireyin Trajik Kültürü**\nKültür bireysel yaratım; kitle ahlakı tekdüze eder.\n“Dans eden bir yıldız…” → acıdan sanata dönüşüm.","x":560,"y":-550,"width":460,"height":170,"color":"#dc2626"},
+		{"id":"p_spengler","type":"text","text":"🟧 **Spengler – Doğum→Yükseliş→Olgunluk→Çöküş**\nMedeniyet: ruhun tükenişi, mekanikleşme; sanat/mimari kültürün damarı.","x":1300,"y":-550,"width":460,"height":170,"color":"#f97316"},
+		{"id":"p_geertz","type":"text","text":"🟦 **Geertz – Web of Shared Meaning**\nKültür: paylaşılan anlamlar ağı; semboller/ritüellerin yorumu (**kalın betimleme**).","x":1240,"y":-290,"width":460,"height":150,"color":"#0284c7"},
+		{"id":"p_arendt","type":"text","text":"⚫ **Arendt – Kalıcılığın Kültürü**\nSanat/felsefe kalıcı; eğlence dolaşan/ geçici.","x":1260,"y":10,"width":420,"height":150,"color":"#111827"},
+		{"id":"p_herder","type":"text","text":"🟨 **Herder – Volksgeist**\nDil kültürün taşıyıcısı; her halkın **mutluluk merkezi** vardır.\nKültür organiktir; tek rasyonalizme indirgenemez.","x":-80,"y":-550,"width":420,"height":170,"color":"#f59e0b"},
+		{"id":"p_gramsci","type":"text","text":"🟩 **Gramsci – Hegemonya / Karşı-kültür**\nEgemenlik rıza üretir; “sağduyu”yu şekillendirir; karşı kültürle direnç.","x":200,"y":-290,"width":420,"height":150,"color":"#16a34a"},
+		{"id":"p_bourdieu","type":"text","text":"🟪 **Bourdieu – Kültürel Sermaye & Habitus**\nZevkler sınıfsal; sermaye meşruiyet üretir; habitus yetişme izidir.","x":70,"y":10,"width":420,"height":150,"color":"#7c3aed"},
+		{"id":"t_ozellik","type":"text","text":"⚙️ **Özellikler**\n• Öğrenilmiş • Paylaşılan • Sembolik • Uyarlanabilir","x":-1140,"y":-380,"width":500,"height":130,"color":"#2563eb"},
+		{"id":"t_civ","type":"text","text":"🏛️ **Kültür ≠ Medeniyet**\nKültür: anlam/kimlik; Medeniyet: kurumlar, örgütlenme, maddi ilerleme.","x":-1140,"y":-180,"width":500,"height":130,"color":"#0f766e"},
+		{"id":"t_tanim","type":"text","text":"📘 **Tanım (Tylor)**\nKültür: bilgi, inanç, değer, gelenek, dil, sanat, ahlak, yasalar ve diğer yetenek/alışkanlıkların **karmaşık bütünü**.","x":-1140,"y":-600,"width":500,"height":150,"color":"#0ea5e9"},
+		{"id":"t_unsurlar","type":"text","text":"🧩 **Kültürün Unsurları**\n• Değerler • Normlar • Semboller • Dil • Ritüeller\n• **Maddi** kültür (mimari, giyim, teknoloji)\n• **Maddi olmayan** kültür (inanç, etik, ideoloji, mit)","x":-600,"y":-600,"width":460,"height":180,"color":"#0284c7"},
+		{"id":"t_dinamik","type":"text","text":"🔁 **Dinamik Doğa**\nSosyal değişim, göç, küreselleşme, teknoloji, çatışmalar → kültür **sürekli evrim**.","x":-600,"y":-380,"width":460,"height":130,"color":"#1d4ed8"},
+		{"id":"t_kimlik","type":"text","text":"🧠 **Kimlik & Dünya Görüşü**\nAidiyet sağlar; zaman, hakikat ve varoluş algısını çerçeveler.","x":-600,"y":-180,"width":460,"height":130,"color":"#0ea5a0"},
+		{"id":"e_sorular","type":"text","text":"📝 **Sınav Soruları – Başlıklar**\n1) Kültür nedir?\n2) İngiltere’nin premodern kültürü\n3) Beowulf / Canterbury bağlamı\n4) Rönesans dönemi\n5) Bacon – *New Atlantis*\n6) More – *Utopia*\n7) Machiavelli – *The Prince*\n8) Shakespeare trajedisi ve benlik","x":-1160,"y":440,"width":560,"height":360,"color":"#334155"}
+	],
+	"edges":[
+		{"id":"e_dd230847","fromNode":"p_herder","fromSide":"right","toNode":"p_nietzsche","toSide":"left","color":"6","label":"influence"},
+		{"id":"e_2b364763","fromNode":"p_nietzsche","fromSide":"right","toNode":"p_spengler","toSide":"left","color":"6","label":"worldview impact"},
+		{"id":"e_72511d51","fromNode":"p_spengler","fromSide":"left","toNode":"p_gramsci","toSide":"right","color":"6","label":"reaction"},
+		{"id":"e_621f20b2","fromNode":"p_gramsci","fromSide":"right","toNode":"p_geertz","toSide":"left","color":"6","label":"cultural shift"},
+		{"id":"e_48f43430","fromNode":"p_geertz","fromSide":"bottom","toNode":"p_bourdieu","toSide":"top","color":"6","label":"sociological development"},
+		{"id":"e_a85214ee","fromNode":"p_bourdieu","fromSide":"right","toNode":"p_arendt","toSide":"left","color":"6","label":"ontological critique"}
+	]
+}
