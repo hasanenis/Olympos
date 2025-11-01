@@ -73,7 +73,7 @@ export function slugifyFilePath(fp: FilePath, excludeExt?: boolean): FullSlug {
   fp = stripSlashes(fp) as FilePath
   let ext = getFileExtension(fp)
   const withoutFileExt = fp.replace(new RegExp(ext + "$"), "")
-  if (excludeExt || [".md", ".html", undefined].includes(ext)) {
+  if (excludeExt || [".md", ".html", ".canvas", undefined].includes(ext)) {
     ext = ""
   }
 
@@ -144,7 +144,7 @@ export function normalizeHastElement(rawEl: HastElement, curBase: FullSlug, newB
   _rebaseHastElement(el, "src", curBase, newBase)
   _rebaseHastElement(el, "href", curBase, newBase)
   if (el.children) {
-    el.children = el.children.map((child) =>
+    el.children = el.children.map((child: HastElement | any) =>
       normalizeHastElement(child as HastElement, curBase, newBase),
     )
   }

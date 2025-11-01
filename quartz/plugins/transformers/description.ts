@@ -84,7 +84,7 @@ export const Description: QuartzTransformerPlugin<Partial<Options>> = (userOpts)
 
 declare module "vfile" {
   interface DataMap {
-    description: string
-    text: string
+    description?: string
+    text?: string
   }
 }

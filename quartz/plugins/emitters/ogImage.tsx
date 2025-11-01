@@ -143,7 +143,7 @@ export const CustomOgImages: QuartzEmitterPlugin<Partial<SocialImageOptions>> = 
       const baseUrl = ctx.cfg.configuration.baseUrl
       return {
         additionalHead: [
-          (pageData) => {
+          (pageData: QuartzPluginData) => {
             const isRealFile = pageData.filePath !== undefined
             let userDefinedOgImagePath = pageData.frontmatter?.socialImage
 

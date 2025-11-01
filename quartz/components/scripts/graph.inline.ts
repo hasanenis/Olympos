@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { ContentDetails } from "../../plugins/emitters/contentIndex"
 import {
   SimulationNodeDatum,

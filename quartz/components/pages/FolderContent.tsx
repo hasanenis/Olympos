@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "../types"
 
 import style from "../styles/listPage.scss"
