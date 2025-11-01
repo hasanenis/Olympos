@@ -58,9 +58,23 @@ const CanvasContent: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
             <button type="button" class="canvas-button" data-action="reset" aria-label="Sıfırla">
               ↺
             </button>
+            <button
+              type="button"
+              class="canvas-button canvas-button-fullscreen"
+              data-action="fullscreen"
+              data-label-enter="⛶"
+              data-label-exit="🗗"
+              data-tooltip-enter="Tam ekran"
+              data-tooltip-exit="Tam ekranı kapat"
+              aria-label="Tam ekran"
+              aria-pressed="false"
+            >
+              ⛶
+            </button>
           </div>
           <p class="canvas-hint" aria-live="polite">
-            Fare tekerleği ile yakınlaştırın, sürükleyerek taşıyın.
+            Fare tekerleği ile yakınlaştırın, sürükleyerek taşıyın. Dokunmatikte iki parmakla
+            gezinin.
           </p>
         </div>
         <div class="canvas-viewport">

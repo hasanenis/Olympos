@@ -12,6 +12,31 @@ type ViewerState = {
   height: number
 }
 
+type FullscreenElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void
+  msRequestFullscreen?: () => Promise<void> | void
+}
+
+type FullscreenDocument = Document & {
+  webkitExitFullscreen?: () => Promise<void> | void
+  msExitFullscreen?: () => Promise<void> | void
+  webkitFullscreenElement?: Element | null
+  msFullscreenElement?: Element | null
+}
+
+type EdgeElementRecord = {
+  id: string
+  path: SVGPathElement
+  label?: SVGTextElement
+  from: string
+  to: string
+}
+
+type EdgeCollections = {
+  elements: Map<string, EdgeElementRecord>
+  byNode: Map<string, Set<string>>
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
@@ -54,6 +79,8 @@ function createNodeElement(node: CanvasNode, offset: Point): HTMLDivElement {
   el.style.top = `${node.y - offset.y}px`
   el.style.width = `${node.width}px`
   el.style.height = `${node.height}px`
+  el.dataset.nodeId = node.id
+  el.tabIndex = 0
 
   if (node.background) {
     el.style.setProperty("--canvas-node-bg", node.background)
@@ -109,13 +136,14 @@ function renderEdges(
   nodes: Map<string, CanvasNode>,
   edges: CanvasEdge[] | undefined,
   offset: Point,
-): void {
+  nodeElements: Map<string, HTMLDivElement>,
+): EdgeCollections {
   while (svg.firstChild) {
     svg.removeChild(svg.firstChild)
   }
 
   if (!edges || edges.length === 0) {
-    return
+    return { elements: new Map(), byNode: new Map() }
   }
 
   const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs")
@@ -137,11 +165,22 @@ function renderEdges(
   group.setAttribute("class", "canvas-edges-group")
   svg.append(group)
 
+  const edgeElements = new Map<string, EdgeElementRecord>()
+  const edgesByNode = new Map<string, Set<string>>()
+
+  const registerNodeEdge = (nodeId: string, edgeId: string) => {
+    if (!edgesByNode.has(nodeId)) {
+      edgesByNode.set(nodeId, new Set())
+    }
+    edgesByNode.get(nodeId)!.add(edgeId)
+  }
+
   edges.forEach((edge) => {
     const from = nodes.get(edge.fromNode)
     const to = nodes.get(edge.toNode)
     if (!from || !to) return
 
+    const edgeId = edge.id ?? `${edge.fromNode}-${edge.toNode}`
     const start = anchorFor(from, edge.fromSide, offset)
     const end = anchorFor(to, edge.toSide, offset)
 
@@ -151,19 +190,52 @@ function renderEdges(
     path.setAttribute("d", d)
     path.setAttribute("class", "canvas-edge")
     path.setAttribute("marker-end", "url(#canvas-arrow)")
+    path.dataset.edgeId = edgeId
+    path.dataset.fromNode = edge.fromNode
+    path.dataset.toNode = edge.toNode
     group.append(path)
 
+    registerNodeEdge(edge.fromNode, edgeId)
+    registerNodeEdge(edge.toNode, edgeId)
+
+    let text: SVGTextElement | undefined
     if (edge.label) {
-      const text = document.createElementNS("http://www.w3.org/2000/svg", "text")
+      text = document.createElementNS("http://www.w3.org/2000/svg", "text")
       text.textContent = edge.label
       const labelX = (start.x + end.x) / 2
       const labelY = (start.y + end.y) / 2 - 8
       text.setAttribute("x", labelX.toString())
       text.setAttribute("y", labelY.toString())
       text.setAttribute("class", "canvas-edge-label")
+      text.dataset.edgeId = edgeId
       group.append(text)
     }
+
+    const fromElement = nodeElements.get(edge.fromNode)
+    const toElement = nodeElements.get(edge.toNode)
+
+    const toggleActive = (active: boolean) => {
+      path.classList.toggle("canvas-edge-active", active)
+      if (text) {
+        text.classList.toggle("canvas-edge-label-active", active)
+      }
+      fromElement?.classList.toggle("canvas-node-active", active)
+      toElement?.classList.toggle("canvas-node-active", active)
+    }
+
+    path.addEventListener("pointerenter", () => toggleActive(true))
+    path.addEventListener("pointerleave", () => toggleActive(false))
+
+    edgeElements.set(edgeId, {
+      id: edgeId,
+      path,
+      label: text,
+      from: edge.fromNode,
+      to: edge.toNode,
+    })
   })
+
+  return { elements: edgeElements, byNode: edgesByNode }
 }
 
 type Cleanup = () => void
@@ -203,6 +275,13 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
   }
 
   const onPointerDown = (event: PointerEvent) => {
+    if (event.button !== 0) {
+      return
+    }
+    const target = event.target as HTMLElement | null
+    if (target?.closest("a, button, input, textarea")) {
+      return
+    }
     isPanning = true
     startX = event.clientX
     startY = event.clientY
@@ -250,6 +329,94 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
 
   viewport.addEventListener("wheel", onWheel, { passive: false })
 
+  const additionalCleanup: Array<() => void> = []
+
+  const fullscreenButton = viewer.querySelector<HTMLButtonElement>(".canvas-button[data-action='fullscreen']")
+
+  const getFullscreenElement = (): Element | null => {
+    const doc = document as FullscreenDocument
+    return document.fullscreenElement ?? doc.webkitFullscreenElement ?? doc.msFullscreenElement ?? null
+  }
+
+  const requestFullscreen = (element: HTMLElement) => {
+    const target = element as FullscreenElement
+    if (target.requestFullscreen) {
+      return target.requestFullscreen()
+    }
+    if (target.webkitRequestFullscreen) {
+      return target.webkitRequestFullscreen()
+    }
+    if (target.msRequestFullscreen) {
+      return target.msRequestFullscreen()
+    }
+    return Promise.resolve()
+  }
+
+  const exitFullscreen = () => {
+    const doc = document as FullscreenDocument
+    if (document.exitFullscreen) {
+      return document.exitFullscreen()
+    }
+    if (doc.webkitExitFullscreen) {
+      return doc.webkitExitFullscreen()
+    }
+    if (doc.msExitFullscreen) {
+      return doc.msExitFullscreen()
+    }
+    return Promise.resolve()
+  }
+
+  const updateFullscreenState = () => {
+    const isFullscreen = getFullscreenElement() === viewer
+    viewer.dataset.fullscreen = isFullscreen ? "true" : "false"
+    if (!fullscreenButton) return
+    fullscreenButton.setAttribute("aria-pressed", isFullscreen ? "true" : "false")
+    const labelKey = isFullscreen ? "tooltipExit" : "tooltipEnter"
+    const textKey = isFullscreen ? "labelExit" : "labelEnter"
+    const tooltip = fullscreenButton.dataset[labelKey]
+    const label = fullscreenButton.dataset[textKey]
+    if (label) {
+      fullscreenButton.textContent = label
+    }
+    if (tooltip) {
+      fullscreenButton.setAttribute("aria-label", tooltip)
+      fullscreenButton.title = tooltip
+    }
+  }
+
+  let canUseFullscreen = false
+
+  if (fullscreenButton) {
+    const target = viewer as FullscreenElement
+    canUseFullscreen =
+      typeof target.requestFullscreen === "function" ||
+      typeof target.webkitRequestFullscreen === "function" ||
+      typeof target.msRequestFullscreen === "function"
+
+    const fullscreenEnabled = document.fullscreenEnabled ?? true
+
+    if (!canUseFullscreen || !fullscreenEnabled) {
+      fullscreenButton.dataset.unavailable = "true"
+      fullscreenButton.disabled = true
+    } else {
+      updateFullscreenState()
+      const onFullscreenChange = () => updateFullscreenState()
+      document.addEventListener("fullscreenchange", onFullscreenChange)
+      document.addEventListener("webkitfullscreenchange", onFullscreenChange as EventListener)
+      document.addEventListener("MSFullscreenChange", onFullscreenChange as EventListener)
+      additionalCleanup.push(() => {
+        document.removeEventListener("fullscreenchange", onFullscreenChange)
+        document.removeEventListener("webkitfullscreenchange", onFullscreenChange as EventListener)
+        document.removeEventListener("MSFullscreenChange", onFullscreenChange as EventListener)
+      })
+      additionalCleanup.push(() => {
+        if (getFullscreenElement() === viewer) {
+          Promise.resolve(exitFullscreen()).catch(() => {})
+        }
+      })
+    }
+  }
+
   const updateScale = (factor: number) => {
     const rect = viewport.getBoundingClientRect()
     const centerX = rect.left + rect.width / 2
@@ -277,6 +444,16 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
           applyTransform()
           break
         }
+        case "fullscreen":
+          if (!canUseFullscreen) {
+            break
+          }
+          if (getFullscreenElement() === viewer) {
+            Promise.resolve(exitFullscreen()).catch(() => {})
+          } else {
+            Promise.resolve(requestFullscreen(viewer)).catch(() => {})
+          }
+          break
         case "reset":
         default: {
           state.scale = 1
@@ -314,6 +491,7 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
     viewport.removeEventListener("wheel", onWheel)
     buttonHandlers.forEach((cleanup) => cleanup())
     resizeObserver.disconnect()
+    additionalCleanup.forEach((cleanup) => cleanup())
   }
 }
 
@@ -350,11 +528,13 @@ function initialiseViewer(viewer: HTMLElement) {
   const height = Math.max(maxY - minY, 1)
 
   const nodeMap = new Map<string, CanvasNode>()
+  const nodeElements = new Map<string, HTMLDivElement>()
   nodesContainer.innerHTML = ""
   nodes.forEach((node) => {
     const element = createNodeElement(node, offset)
     nodesContainer.append(element)
     nodeMap.set(node.id, node)
+    nodeElements.set(node.id, element)
   })
 
   const inner = viewer.querySelector<HTMLDivElement>(".canvas-inner")
@@ -366,7 +546,39 @@ function initialiseViewer(viewer: HTMLElement) {
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
   svg.setAttribute("width", width.toString())
   svg.setAttribute("height", height.toString())
-  renderEdges(svg, nodeMap, edges, offset)
+  const { elements: edgeElements, byNode: edgesByNode } = renderEdges(svg, nodeMap, edges, offset, nodeElements)
+
+  const highlightNodeEdges = (nodeId: string, active: boolean) => {
+    const element = nodeElements.get(nodeId)
+    if (!element) {
+      return
+    }
+    element.classList.toggle("canvas-node-active", active)
+    const edgeIds = edgesByNode.get(nodeId)
+    if (!edgeIds) {
+      return
+    }
+    edgeIds.forEach((edgeId) => {
+      const record = edgeElements.get(edgeId)
+      if (!record) return
+      record.path.classList.toggle("canvas-edge-active", active)
+      record.label?.classList.toggle("canvas-edge-label-active", active)
+      const otherId = record.from === nodeId ? record.to : record.from
+      if (otherId !== nodeId) {
+        const otherNode = nodeElements.get(otherId)
+        otherNode?.classList.toggle("canvas-node-connected", active)
+      }
+    })
+  }
+
+  nodeElements.forEach((element, nodeId) => {
+    const activate = () => highlightNodeEdges(nodeId, true)
+    const deactivate = () => highlightNodeEdges(nodeId, false)
+    element.addEventListener("pointerenter", activate)
+    element.addEventListener("pointerleave", deactivate)
+    element.addEventListener("focus", activate)
+    element.addEventListener("blur", deactivate)
+  })
 
   const state: ViewerState = {
     scale: 1,

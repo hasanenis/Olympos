@@ -13,6 +13,7 @@
   border-radius: 0.75rem;
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08);
   border: 1px solid color-mix(in srgb, var(--darkgray, #444) 12%, transparent);
+  position: relative;
 }
 
 .canvas-viewer[data-loaded="true"] .canvas-viewport {
@@ -44,6 +45,7 @@
   display: grid;
   place-items: center;
   transition: background 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
 }
 
 .canvas-button:focus-visible {
@@ -54,6 +56,15 @@
 .canvas-button:hover {
   background: color-mix(in srgb, var(--secondary, #284b63) 30%, transparent);
   transform: translateY(-1px);
+}
+
+.canvas-button-fullscreen[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--tertiary, #84a59d) 35%, transparent);
+  border-color: color-mix(in srgb, var(--tertiary, #84a59d) 55%, transparent);
+}
+
+.canvas-button[data-unavailable="true"] {
+  display: none;
 }
 
 .canvas-hint {
@@ -68,7 +79,13 @@
   min-height: clamp(20rem, 70vh, 36rem);
   border-radius: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--darkgray, #444) 18%, transparent);
-  background: repeating-linear-gradient(
+  background:
+    radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--highlight, rgba(148, 184, 209, 0.3)) 35%, transparent) 0%,
+      transparent 65%
+    ),
+    repeating-linear-gradient(
       0deg,
       color-mix(in srgb, var(--lightgray, #ddd) 24%, transparent),
       color-mix(in srgb, var(--lightgray, #ddd) 24%, transparent) 1px,
@@ -84,6 +101,7 @@
     );
   overflow: hidden;
   cursor: grab;
+  touch-action: none;
 }
 
 .canvas-viewport[data-panning="true"] {
@@ -99,7 +117,7 @@
 .canvas-nodes {
   position: absolute;
   inset: 0;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .canvas-node {
@@ -107,15 +125,26 @@
   box-sizing: border-box;
   padding: 0.75rem;
   border-radius: 1rem;
-  background: var(--canvas-node-bg, color-mix(in srgb, var(--light, #fafafa) 90%, transparent));
+  background: var(
+    --canvas-node-bg,
+    color-mix(in srgb, var(--light, #fafafa) 92%, rgba(255, 255, 255, 0.65))
+  );
   color: var(--canvas-node-color, inherit);
-  box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.12);
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  box-shadow: 0 0.45rem 1rem rgba(15, 23, 42, 0.14);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  align-items: stretch;
+  justify-content: stretch;
+  text-align: left;
   pointer-events: auto;
+  backdrop-filter: blur(6px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease,
+    filter 0.2s ease;
+  cursor: grab;
+}
+
+.canvas-node:active {
+  cursor: grabbing;
 }
 
 .canvas-node-content {
@@ -124,6 +153,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  text-align: left;
+  align-items: flex-start;
 }
 
 .canvas-node-link {
@@ -138,17 +169,25 @@
   border-radius: 0.5rem;
 }
 
+.canvas-node-image .canvas-node-content {
+  align-items: center;
+}
+
 .canvas-edges {
   position: absolute;
   inset: 0;
   overflow: visible;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .canvas-edge {
   fill: none;
-  stroke: color-mix(in srgb, var(--secondary, #284b63) 65%, transparent);
-  stroke-width: 2;
+  stroke: color-mix(in srgb, var(--secondary, #284b63) 60%, transparent);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  opacity: 0.75;
+  transition: stroke 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+  pointer-events: visibleStroke;
 }
 
 .canvas-edge-label {
@@ -159,6 +198,37 @@
   paint-order: stroke;
   stroke: color-mix(in srgb, var(--light, #fafafa) 80%, transparent);
   stroke-width: 3px;
+  opacity: 0.9;
+  transition: opacity 0.2s ease, fill 0.2s ease;
+  pointer-events: none;
+}
+
+.canvas-edge-active {
+  stroke: color-mix(in srgb, var(--tertiary, #84a59d) 85%, transparent);
+  opacity: 1;
+  filter: drop-shadow(0 0 0.45rem color-mix(in srgb, var(--tertiary, #84a59d) 75%, transparent));
+}
+
+.canvas-edge-label-active {
+  opacity: 1;
+  fill: color-mix(in srgb, var(--tertiary, #84a59d) 90%, transparent);
+}
+
+.canvas-node-active {
+  transform: translateY(-2px) scale(1.015);
+  border-color: color-mix(in srgb, var(--secondary, #284b63) 50%, transparent);
+  box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.24);
+  z-index: 2;
+}
+
+.canvas-node-connected {
+  box-shadow: 0 0.5rem 1.4rem rgba(15, 23, 42, 0.18);
+  border-color: color-mix(in srgb, var(--secondary, #284b63) 35%, transparent);
+}
+
+.canvas-node:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--tertiary, #84a59d) 70%, transparent);
+  outline-offset: 3px;
 }
 
 .canvas-summary {
@@ -198,7 +268,87 @@
   font-size: 0.9rem;
 }
 
-@media (max-width: 640px) {
+.canvas-viewer:fullscreen {
+  background: color-mix(in srgb, var(--dark, #0b1c26) 40%, var(--light, #f7f7f7));
+  border-radius: 0;
+  box-shadow: none;
+  padding: clamp(0.75rem, 3vh, 1.5rem);
+}
+
+.canvas-viewer:fullscreen .canvas-viewport {
+  min-height: calc(100vh - 6rem);
+  border-radius: 1rem;
+  border-color: color-mix(in srgb, var(--secondary, #284b63) 35%, transparent);
+  background:
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, rgba(8, 29, 43, 0.65) 60%, transparent),
+      color-mix(in srgb, rgba(8, 29, 43, 0.35) 10%, transparent)
+    ),
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, rgba(82, 110, 143, 0.45) 45%, transparent),
+      color-mix(in srgb, rgba(82, 110, 143, 0.45) 45%, transparent) 1px,
+      transparent 1px,
+      transparent 28px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, rgba(82, 110, 143, 0.45) 45%, transparent),
+      color-mix(in srgb, rgba(82, 110, 143, 0.45) 45%, transparent) 1px,
+      transparent 1px,
+      transparent 28px
+    );
+}
+
+.canvas-viewer:fullscreen .canvas-toolbar {
+  position: absolute;
+  top: clamp(0.75rem, 3vh, 1.5rem);
+  right: clamp(0.75rem, 3vh, 1.5rem);
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, rgba(9, 25, 36, 0.75) 70%, transparent);
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  gap: 0.75rem;
+}
+
+.canvas-viewer:fullscreen .canvas-toolbar-group {
+  gap: 0.35rem;
+}
+
+.canvas-viewer:fullscreen .canvas-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.2rem;
+}
+
+.canvas-viewer:fullscreen .canvas-summary {
+  position: absolute;
+  bottom: clamp(0.75rem, 3vh, 1.5rem);
+  right: clamp(0.75rem, 3vh, 1.5rem);
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, rgba(11, 28, 40, 0.75) 70%, transparent);
+  color: var(--light, #f7f7f7);
+  box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.35);
+}
+
+.canvas-viewer:fullscreen .canvas-summary div {
+  background: transparent;
+}
+
+.canvas-viewer:fullscreen .canvas-hint {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .canvas-viewer {
+    padding: 0.85rem;
+    border-radius: 0.65rem;
+  }
+
   .canvas-toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -212,9 +362,52 @@
 
   .canvas-button {
     flex: 1;
+    width: auto;
+  }
+
+  .canvas-hint {
+    text-align: center;
+  }
+
+  .canvas-viewport {
+    min-height: clamp(18rem, 62vh, 32rem);
+  }
+}
+
+@media (max-width: 640px) {
+  .canvas-toolbar-group {
+    gap: 0.5rem;
+  }
+
+  .canvas-button {
+    height: 2.5rem;
   }
 
   .canvas-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+@media (max-width: 480px) {
+  .canvas-viewer {
+    padding: 0.75rem;
+  }
+
+  .canvas-viewport {
+    min-height: clamp(16rem, 58vh, 28rem);
+  }
+
+  .canvas-node {
+    padding: 0.6rem;
+  }
+
+  .canvas-toolbar-group {
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .canvas-button {
+    flex: 1 1 calc(50% - 0.45rem);
+  }
+}
+
