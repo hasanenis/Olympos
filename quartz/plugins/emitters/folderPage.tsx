@@ -20,6 +20,7 @@ import { write } from "./helpers"
 import { i18n, TRANSLATIONS } from "../../i18n"
 import { BuildCtx } from "../../util/ctx"
 import { StaticResources } from "../../util/resources"
+import { collectCanvasFileEntries } from "../../util/canvas"
 interface FolderPageOptions extends FullPageLayout {
   sort?: (f1: QuartzPluginData, f2: QuartzPluginData) => number
 }
@@ -130,10 +131,12 @@ export const FolderPage: QuartzEmitterPlugin<Partial<FolderPageOptions>> = (user
     },
     async *emit(ctx, content, resources) {
       const allFiles = content.map((c) => c[1].data)
+      const canvasEntries = collectCanvasFileEntries(ctx)
+      const augmentedFiles = [...allFiles, ...canvasEntries]
       const cfg = ctx.cfg.configuration
 
       const folders: Set<SimpleSlug> = new Set(
-        allFiles.flatMap((data) => {
+        augmentedFiles.flatMap((data) => {
           return data.slug
             ? _getFolders(data.slug).filter(
                 (folderName) => folderName !== "." && folderName !== "tags",
@@ -143,10 +146,12 @@ export const FolderPage: QuartzEmitterPlugin<Partial<FolderPageOptions>> = (user
       )
 
       const folderInfo = computeFolderInfo(folders, content, cfg.locale)
-      yield* processFolderInfo(ctx, folderInfo, allFiles, opts, resources)
+      yield* processFolderInfo(ctx, folderInfo, augmentedFiles, opts, resources)
     },
     async *partialEmit(ctx, content, resources, changeEvents) {
       const allFiles = content.map((c) => c[1].data)
+      const canvasEntries = collectCanvasFileEntries(ctx)
+      const augmentedFiles = [...allFiles, ...canvasEntries]
       const cfg = ctx.cfg.configuration
 
       // Find all folders that need to be updated based on changed files
@@ -163,7 +168,7 @@ export const FolderPage: QuartzEmitterPlugin<Partial<FolderPageOptions>> = (user
       // If there are affected folders, rebuild their pages
       if (affectedFolders.size > 0) {
         const folderInfo = computeFolderInfo(affectedFolders, content, cfg.locale)
-        yield* processFolderInfo(ctx, folderInfo, allFiles, opts, resources)
+        yield* processFolderInfo(ctx, folderInfo, augmentedFiles, opts, resources)
       }
     },
   }
