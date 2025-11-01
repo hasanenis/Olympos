@@ -7,24 +7,45 @@ import BodyConstructor from "../../components/Body"
 import { pageResources, renderPage } from "../../components/renderPage"
 import { FullPageLayout } from "../../cfg"
 import { defaultContentPageLayout, sharedPageComponents } from "../../../quartz.layout"
-import { pathToRoot, slugifyFilePath, joinSegments, FilePath } from "../../util/path"
+import { pathToRoot, slugifyFilePath, joinSegments, FilePath, FullSlug, resolveRelative } from "../../util/path"
 import { write } from "./helpers"
 import { StaticResources } from "../../util/resources"
 import CanvasPage, { CanvasData } from "../../components/pages/Canvas"
 import { QuartzPluginData } from "../vfile"
 import { BuildCtx } from "../../util/ctx"
-
-function titleFromFile(fp: string): string {
-  const base = path.posix.basename(fp, path.extname(fp))
-  return base
-    .split(/[-_\s]+/)
-    .filter((segment) => segment.length > 0)
-    .map((segment) => segment[0]?.toLocaleUpperCase?.() + segment.slice(1))
-    .join(" ")
-    .trim() || base
-}
+import {
+  buildCanvasFileData,
+  collectCanvasFileEntries,
+  isCanvasFile,
+  toCanvasAliasSlug,
+} from "../../util/canvas"
 
 const emptyTree = { type: "root", children: [] } as const
+
+async function writeAliasRedirect(ctx: BuildCtx, aliasSlug: FullSlug, targetSlug: FullSlug) {
+  const aliasIndexSlug = joinSegments(aliasSlug, "index") as FullSlug
+  const redirectUrl = resolveRelative(aliasIndexSlug, targetSlug)
+  const aliasContent = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="refresh" content="0; url=${redirectUrl}">
+    <link rel="canonical" href="${redirectUrl}">
+    <meta name="robots" content="noindex">
+    <title>${targetSlug}</title>
+  </head>
+  <body></body>
+</html>
+`
+
+  await write({
+    ctx,
+    slug: aliasIndexSlug,
+    ext: ".html",
+    content: aliasContent,
+  })
+}
 
 async function emitCanvasPage(
   ctx: BuildCtx,
@@ -33,17 +54,10 @@ async function emitCanvasPage(
   resources: StaticResources,
   layout: FullPageLayout,
   allFiles: QuartzPluginData[],
+  canvasEntries: QuartzPluginData[],
 ) {
   const slug = slugifyFilePath(canvasPath as FilePath, true)
-  const fileData = {
-    slug,
-    filePath: joinSegments(ctx.argv.directory, canvasPath) as FilePath,
-    relativePath: canvasPath as FilePath,
-    frontmatter: {
-      title: titleFromFile(canvasPath),
-    },
-    canvasData: data,
-  } as QuartzPluginData & { canvasData: CanvasData }
+  const fileData = buildCanvasFileData(ctx, canvasPath, data)
 
   const externalResources = pageResources(pathToRoot(slug), resources)
   const componentData: QuartzComponentProps = {
@@ -53,11 +67,15 @@ async function emitCanvasPage(
     cfg: ctx.cfg.configuration,
     children: [],
     tree: emptyTree as unknown as any,
-    allFiles: [...allFiles, fileData],
+    allFiles: [...allFiles, ...canvasEntries.filter((entry) => entry.slug !== fileData.slug), fileData],
   }
 
   const html = renderPage(ctx.cfg.configuration, slug, componentData, layout, externalResources)
-  return write({ ctx, slug, content: html, ext: ".html" })
+  const outputPath = await write({ ctx, slug, content: html, ext: ".html" })
+
+  const aliasSlug = toCanvasAliasSlug(canvasPath)
+  await writeAliasRedirect(ctx, aliasSlug, slug)
+  return outputPath
 }
 
 export const CanvasPageEmitter: QuartzEmitterPlugin = () => {
@@ -77,16 +95,17 @@ export const CanvasPageEmitter: QuartzEmitterPlugin = () => {
       return [Head, Header, Body, ...header, ...beforeBody, pageBody, ...afterBody, ...left, ...right, Footer]
     },
     async *emit(ctx, content, resources) {
-      const canvasFiles = ctx.allFiles.filter((fp) => fp.endsWith(".canvas"))
+      const canvasFiles = ctx.allFiles.filter(isCanvasFile)
       if (canvasFiles.length === 0) return
 
       const allFiles = content.map((c) => c[1].data)
+      const canvasEntries = collectCanvasFileEntries(ctx)
       for (const relativePath of canvasFiles) {
         const absolutePath = joinSegments(ctx.argv.directory, relativePath)
         try {
           const raw = await fs.readFile(absolutePath, "utf-8")
           const data = JSON.parse(raw) as CanvasData
-          yield await emitCanvasPage(ctx, relativePath, data, resources, opts, allFiles)
+          yield await emitCanvasPage(ctx, relativePath, data, resources, opts, allFiles, canvasEntries)
         } catch (err) {
           console.error(`Quartz: Failed to render canvas ${relativePath}`, err)
         }
@@ -97,6 +116,7 @@ export const CanvasPageEmitter: QuartzEmitterPlugin = () => {
       if (relevant.length === 0) return
 
       const allFiles = content.map((c) => c[1].data)
+      const canvasEntries = collectCanvasFileEntries(ctx)
       for (const event of relevant) {
         const relativePath = event.path
         const slug = slugifyFilePath(relativePath as FilePath, true)
@@ -109,6 +129,15 @@ export const CanvasPageEmitter: QuartzEmitterPlugin = () => {
               console.error(`Quartz: Failed to remove canvas page ${relativePath}`, err)
             }
           }
+          const aliasSlug = toCanvasAliasSlug(relativePath)
+          const aliasDir = joinSegments(ctx.argv.output, aliasSlug)
+          try {
+            await fs.rm(aliasDir, { recursive: true, force: true })
+          } catch (err) {
+            if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+              console.error(`Quartz: Failed to remove canvas alias ${relativePath}`, err)
+            }
+          }
           continue
         }
 
@@ -116,7 +145,7 @@ export const CanvasPageEmitter: QuartzEmitterPlugin = () => {
         try {
           const raw = await fs.readFile(absolutePath, "utf-8")
           const data = JSON.parse(raw) as CanvasData
-          yield await emitCanvasPage(ctx, relativePath, data, resources, opts, allFiles)
+          yield await emitCanvasPage(ctx, relativePath, data, resources, opts, allFiles, canvasEntries)
         } catch (err) {
           console.error(`Quartz: Failed to render canvas ${relativePath}`, err)
         }

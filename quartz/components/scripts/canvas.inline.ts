@@ -166,10 +166,14 @@ function renderEdges(
   })
 }
 
-function setupInteractions(viewer: HTMLElement, state: ViewerState) {
+type Cleanup = () => void
+
+function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
   const viewport = viewer.querySelector<HTMLDivElement>(".canvas-viewport")
   const inner = viewer.querySelector<HTMLDivElement>(".canvas-inner")
-  if (!viewport || !inner) return
+  if (!viewport || !inner) {
+    return () => {}
+  }
 
   let isPanning = false
   let startX = 0
@@ -198,7 +202,7 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState) {
     viewport.dataset["panning"] = "false"
   }
 
-  viewport.addEventListener("pointerdown", (event) => {
+  const onPointerDown = (event: PointerEvent) => {
     isPanning = true
     startX = event.clientX
     startY = event.clientY
@@ -207,9 +211,9 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState) {
     viewport.setPointerCapture(event.pointerId)
     viewport.dataset["panning"] = "true"
     event.preventDefault()
-  })
+  }
 
-  viewport.addEventListener("pointermove", (event) => {
+  const onPointerMove = (event: PointerEvent) => {
     if (!isPanning) return
     const dx = event.clientX - startX
     const dy = event.clientY - startY
@@ -217,7 +221,7 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState) {
     state.translateX = clamp(startTranslateX + dx, rect.width - state.width * state.scale, 0)
     state.translateY = clamp(startTranslateY + dy, rect.height - state.height * state.scale, 0)
     applyTransform()
-  })
+  }
 
   const endPan = (event: PointerEvent) => {
     if (!isPanning) return
@@ -226,23 +230,25 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState) {
     viewport.dataset["panning"] = "false"
   }
 
-  viewport.addEventListener("pointerup", endPan)
-  viewport.addEventListener("pointercancel", endPan)
-  viewport.addEventListener("pointerleave", () => {
+  const onPointerLeave = () => {
     if (!isPanning) return
     isPanning = false
     viewport.dataset["panning"] = "false"
-  })
+  }
 
-  viewport.addEventListener(
-    "wheel",
-    (event) => {
-      event.preventDefault()
-      const zoomFactor = event.deltaY < 0 ? 1.1 : 0.9
-      zoomAroundPoint(event.clientX, event.clientY, zoomFactor)
-    },
-    { passive: false },
-  )
+  viewport.addEventListener("pointerdown", onPointerDown)
+  viewport.addEventListener("pointermove", onPointerMove)
+  viewport.addEventListener("pointerup", endPan)
+  viewport.addEventListener("pointercancel", endPan)
+  viewport.addEventListener("pointerleave", onPointerLeave)
+
+  const onWheel = (event: WheelEvent) => {
+    event.preventDefault()
+    const zoomFactor = event.deltaY < 0 ? 1.1 : 0.9
+    zoomAroundPoint(event.clientX, event.clientY, zoomFactor)
+  }
+
+  viewport.addEventListener("wheel", onWheel, { passive: false })
 
   const updateScale = (factor: number) => {
     const rect = viewport.getBoundingClientRect()
@@ -251,8 +257,9 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState) {
     zoomAroundPoint(centerX, centerY, factor)
   }
 
+  const buttonHandlers: Array<() => void> = []
   viewer.querySelectorAll<HTMLButtonElement>(".canvas-button").forEach((button) => {
-    button.addEventListener("click", () => {
+    const onClick = () => {
       const action = button.dataset["action"]
       switch (action) {
         case "zoom-in":
@@ -278,7 +285,10 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState) {
           applyTransform()
         }
       }
-    })
+    }
+
+    button.addEventListener("click", onClick)
+    buttonHandlers.push(() => button.removeEventListener("click", onClick))
   })
 
   const resizeObserver = new ResizeObserver(() => {
@@ -294,9 +304,23 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState) {
     }
   })
   resizeObserver.observe(viewport)
+
+  return () => {
+    viewport.removeEventListener("pointerdown", onPointerDown)
+    viewport.removeEventListener("pointermove", onPointerMove)
+    viewport.removeEventListener("pointerup", endPan)
+    viewport.removeEventListener("pointercancel", endPan)
+    viewport.removeEventListener("pointerleave", onPointerLeave)
+    viewport.removeEventListener("wheel", onWheel)
+    buttonHandlers.forEach((cleanup) => cleanup())
+    resizeObserver.disconnect()
+  }
 }
 
 function initialiseViewer(viewer: HTMLElement) {
+  if (viewer.dataset.canvasInitialised === "true") {
+    return
+  }
   const script = viewer.querySelector<HTMLScriptElement>("script[data-canvas]")
   const nodesContainer = viewer.querySelector<HTMLDivElement>(".canvas-nodes")
   const svg = viewer.querySelector<SVGSVGElement>(".canvas-edges")
@@ -368,12 +392,27 @@ function initialiseViewer(viewer: HTMLElement) {
     inner.style.transform = `translate(${state.translateX}px, ${state.translateY}px) scale(${state.scale})`
   }
 
-  setupInteractions(viewer, state)
+  const cleanup = setupInteractions(viewer, state)
   viewer.dataset["loaded"] = "true"
+  viewer.dataset.canvasInitialised = "true"
+
+  if (typeof window !== "undefined" && typeof window.addCleanup === "function") {
+    window.addCleanup(() => {
+      cleanup()
+      viewer.dataset.canvasInitialised = "false"
+      viewer.dataset["loaded"] = "false"
+    })
+  }
 }
 
-export default () => {
-  document.querySelectorAll<HTMLElement>(".canvas-viewer").forEach((viewer) => {
+function setupCanvas(root: ParentNode = document) {
+  root.querySelectorAll<HTMLElement>(".canvas-viewer").forEach((viewer) => {
     initialiseViewer(viewer)
   })
 }
+
+setupCanvas()
+
+document.addEventListener("nav", () => {
+  requestAnimationFrame(() => setupCanvas())
+})
