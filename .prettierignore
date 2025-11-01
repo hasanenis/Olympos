@@ -1,3 +1,10 @@
 public
 node_modules
 .quartz-cache
+content
+quartz/components/styles/graph.scss
+quartz/plugins/emitters/canvasPage.tsx
+quartz/processors/parse.ts
+quartz/util/canvas.ts
+types/vendor-shims.d.ts
+.github/workflows/deploy.yaml

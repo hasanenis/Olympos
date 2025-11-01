@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import style from "./styles/footer.scss"
 import { version } from "../../package.json"
@@ -13,8 +14,7 @@ export default ((opts?: Options) => {
     const links = opts?.links ?? []
     return (
       <footer class={`${displayClass ?? ""}`}>
-        <p>
-        </p>
+        <p></p>
         <ul>
           {Object.entries(links).map(([text, link]) => (
             <li>

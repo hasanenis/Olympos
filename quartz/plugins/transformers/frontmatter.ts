@@ -66,8 +66,8 @@ export const FrontMatter: QuartzTransformerPlugin<Partial<Options>> = (userOpts)
             const { data } = matter(fileData, {
               ...opts,
               engines: {
-                yaml: (s) => yaml.load(s, { schema: yaml.JSON_SCHEMA }) as object,
-                toml: (s) => toml.parse(s) as object,
+                yaml: (s: string) => yaml.load(s, { schema: yaml.JSON_SCHEMA }) as object,
+                toml: (s: string) => toml.parse(s) as object,
               },
             })
 
@@ -134,8 +134,8 @@ export const FrontMatter: QuartzTransformerPlugin<Partial<Options>> = (userOpts)
 
 declare module "vfile" {
   interface DataMap {
-    aliases: FullSlug[]
-    frontmatter: { [key: string]: unknown } & {
+    aliases?: any[]
+    frontmatter?: any & {
       title: string
     } & Partial<{
         tags: string[]

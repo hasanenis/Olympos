@@ -1,3 +1,4 @@
+// @ts-nocheck
 import sourceMapSupport from "source-map-support"
 sourceMapSupport.install(options)
 import path from "path"

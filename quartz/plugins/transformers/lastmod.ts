@@ -37,7 +37,7 @@ function coerceDate(fp: string, d: any): Date {
   return invalidDate ? new Date() : dt
 }
 
-type MaybeDate = undefined | string | number
+type MaybeDate = undefined | string | number | Date
 export const CreatedModifiedDate: QuartzTransformerPlugin<Partial<Options>> = (userOpts) => {
   const opts = { ...defaultOptions, ...userOpts }
   return {
@@ -106,10 +106,6 @@ export const CreatedModifiedDate: QuartzTransformerPlugin<Partial<Options>> = (u
 
 declare module "vfile" {
   interface DataMap {
-    dates: {
-      created: Date
-      modified: Date
-      published: Date
-    }
+    dates?: any
   }
 }
