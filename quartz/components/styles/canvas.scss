@@ -5,62 +5,95 @@
 }
 
 .canvas-viewer {
+  --canvas-surface: #1f232c;
+  --canvas-surface-alt: #14171f;
+  --canvas-border: rgba(84, 98, 128, 0.42);
+  --canvas-highlight: rgba(142, 165, 255, 0.78);
+  --canvas-highlight-strong: rgba(176, 196, 255, 0.95);
+  --canvas-edge-base: rgba(108, 126, 184, 0.7);
+  --canvas-edge-glow-color: rgba(164, 186, 255, 0.88);
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  background: var(--light, #f7f7f7);
-  padding: 1rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08);
-  border: 1px solid color-mix(in srgb, var(--darkgray, #444) 12%, transparent);
-  position: relative;
+  padding: 1.15rem;
+  border-radius: 0.85rem;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(86, 104, 168, 0.2), transparent 60%),
+    linear-gradient(150deg, var(--canvas-surface), var(--canvas-surface-alt));
+  border: 1px solid var(--canvas-border);
+  box-shadow: 0 24px 48px rgba(6, 10, 20, 0.55);
+  color: #e7ecff;
+  overflow: hidden;
 }
 
-.canvas-viewer[data-loaded="true"] .canvas-viewport {
-  background: color-mix(in srgb, var(--lightgray, #ddd) 40%, transparent);
+.canvas-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(121, 139, 214, 0.16), transparent 55%),
+    radial-gradient(circle at 70% 12%, rgba(148, 87, 214, 0.14), transparent 62%),
+    radial-gradient(circle at 50% 80%, rgba(64, 110, 202, 0.12), transparent 60%);
+  opacity: 0.32;
+  mix-blend-mode: screen;
+  transition: opacity 0.3s ease;
+}
+
+.canvas-viewer[data-fullscreen="true"] .canvas-overlay,
+.canvas-viewer:fullscreen .canvas-overlay {
+  opacity: 0.55;
 }
 
 .canvas-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.6rem;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  z-index: 2;
 }
 
 .canvas-toolbar-group {
   display: inline-flex;
-  gap: 0.4rem;
+  gap: 0.35rem;
+  align-items: center;
 }
 
 .canvas-button {
-  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-  background: color-mix(in srgb, var(--secondary, #284b63) 15%, transparent);
+  border: 1px solid rgba(128, 146, 196, 0.45);
+  background: linear-gradient(180deg, rgba(54, 66, 98, 0.92), rgba(32, 38, 56, 0.94));
   color: inherit;
-  border-radius: 0.5rem;
-  width: 2.25rem;
-  height: 2.25rem;
-  font-size: 1.1rem;
+  border-radius: 0.6rem;
+  width: 2.3rem;
+  height: 2.3rem;
+  font-size: 1.05rem;
   font-weight: 600;
   display: grid;
   place-items: center;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease;
   cursor: pointer;
-}
-
-.canvas-button:focus-visible {
-  outline: 2px solid var(--tertiary, #84a59d);
-  outline-offset: 2px;
+  box-shadow: inset 0 0 0 1px rgba(214, 224, 255, 0.06), 0 8px 18px rgba(8, 12, 20, 0.38);
 }
 
 .canvas-button:hover {
-  background: color-mix(in srgb, var(--secondary, #284b63) 30%, transparent);
+  background: linear-gradient(180deg, rgba(74, 90, 128, 0.92), rgba(42, 50, 72, 0.98));
   transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(14, 18, 30, 0.45);
 }
 
-.canvas-button-fullscreen[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--tertiary, #84a59d) 35%, transparent);
-  border-color: color-mix(in srgb, var(--tertiary, #84a59d) 55%, transparent);
+.canvas-button:focus-visible {
+  outline: 2px solid rgba(150, 176, 255, 0.8);
+  outline-offset: 2px;
+}
+
+.canvas-button-fullscreen[aria-pressed="true"],
+.canvas-button-fullscreen[data-active="true"] {
+  background: linear-gradient(180deg, rgba(132, 94, 214, 0.98), rgba(86, 60, 172, 0.98));
+  border-color: rgba(165, 132, 242, 0.78);
+  box-shadow: 0 16px 26px rgba(72, 48, 150, 0.55);
 }
 
 .canvas-button[data-unavailable="true"] {
@@ -69,39 +102,25 @@
 
 .canvas-hint {
   margin: 0;
-  font-size: 0.85rem;
-  color: color-mix(in srgb, currentColor 70%, transparent);
+  font-size: 0.86rem;
+  color: rgba(190, 198, 219, 0.7);
 }
 
 .canvas-viewport {
   position: relative;
   width: 100%;
   min-height: clamp(20rem, 70vh, 36rem);
-  border-radius: 0.75rem;
-  border: 1px solid color-mix(in srgb, var(--darkgray, #444) 18%, transparent);
+  border-radius: 0.85rem;
+  border: 1px solid rgba(90, 106, 142, 0.45);
   background:
-    radial-gradient(
-      circle at center,
-      color-mix(in srgb, var(--highlight, rgba(148, 184, 209, 0.3)) 35%, transparent) 0%,
-      transparent 65%
-    ),
-    repeating-linear-gradient(
-      0deg,
-      color-mix(in srgb, var(--lightgray, #ddd) 24%, transparent),
-      color-mix(in srgb, var(--lightgray, #ddd) 24%, transparent) 1px,
-      transparent 1px,
-      transparent 32px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--lightgray, #ddd) 24%, transparent),
-      color-mix(in srgb, var(--lightgray, #ddd) 24%, transparent) 1px,
-      transparent 1px,
-      transparent 32px
-    );
+    linear-gradient(0deg, rgba(22, 26, 36, 0.95), rgba(14, 17, 25, 0.98)),
+    repeating-linear-gradient(0deg, rgba(84, 98, 136, 0.16), rgba(84, 98, 136, 0.16) 1px, transparent 1px, transparent 26px),
+    repeating-linear-gradient(90deg, rgba(84, 98, 136, 0.16), rgba(84, 98, 136, 0.16) 1px, transparent 1px, transparent 26px);
   overflow: hidden;
   cursor: grab;
   touch-action: none;
+  box-shadow: inset 0 0 28px rgba(6, 9, 16, 0.72);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .canvas-viewport[data-panning="true"] {
@@ -124,27 +143,75 @@
   position: absolute;
   box-sizing: border-box;
   padding: 0.75rem;
-  border-radius: 1rem;
-  background: var(
-    --canvas-node-bg,
-    color-mix(in srgb, var(--light, #fafafa) 92%, rgba(255, 255, 255, 0.65))
-  );
-  color: var(--canvas-node-color, inherit);
-  box-shadow: 0 0.45rem 1rem rgba(15, 23, 42, 0.14);
-  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.95rem;
+  background: var(--canvas-node-bg, rgba(42, 49, 66, 0.94));
+  color: var(--canvas-node-color, #f3f5ff);
+  border: 1px solid color-mix(in srgb, rgba(120, 138, 176, 0.6) 75%, rgba(188, 204, 255, 0.28) 25%);
   display: flex;
   align-items: stretch;
   justify-content: stretch;
   text-align: left;
   pointer-events: auto;
-  backdrop-filter: blur(6px);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease,
-    filter 0.2s ease;
+  backdrop-filter: blur(6px) saturate(1.08);
+  transition: transform 0.22s ease, border-color 0.25s ease, background 0.25s ease, filter 0.3s ease,
+    box-shadow 0.3s ease;
   cursor: grab;
+  box-shadow: 0 16px 32px rgba(7, 9, 14, 0.55);
+--canvas-node-depth: 1; 
+  --canvas-node-glow: var(--canvas-node-glow, 0);
+  --canvas-node-ping: var(--canvas-node-ping, 0);
+  z-index: var(--canvas-node-depth);
+  overflow: visible;
+  filter:
+    drop-shadow(0 12px 28px rgba(8, 11, 18, 0.55))
+    drop-shadow(0 0 calc(18px * (var(--canvas-node-glow) + var(--canvas-node-ping))) rgba(138, 160, 255, 0.52));
+  transform: translateY(calc(var(--canvas-node-glow) * -2px));
+}
+
+.canvas-node::after {
+  content: "";
+  position: absolute;
+  inset: -8%;
+  border-radius: inherit;
+  border: 1.6px solid rgba(152, 172, 255, 0.7);
+  opacity: calc(var(--canvas-node-ping));
+  transform: scale(calc(1 + var(--canvas-node-ping) * 0.14));
+  filter: blur(calc(12px * var(--canvas-node-ping)));
+  pointer-events: none;
+  mix-blend-mode: screen;
+  z-index: -1;
+  transition: opacity 0.2s ease, transform 0.2s ease, filter 0.22s ease;
 }
 
 .canvas-node:active {
   cursor: grabbing;
+}
+
+.canvas-node-group {
+  --canvas-node-depth: 0;
+  background: rgba(62, 74, 97, 0.32);
+  border-style: dashed;
+  border-color: rgba(126, 148, 186, 0.38);
+  box-shadow: none;
+  color: rgba(218, 226, 255, 0.6);
+  z-index: var(--canvas-node-depth) !important;
+  backdrop-filter: blur(2px) saturate(1.05);
+}
+
+.canvas-node-group .canvas-node-content {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: inherit;
+}
+
+.canvas-node-group.canvas-node-active,
+.canvas-node-group.canvas-node-connected,
+.canvas-node-group.canvas-node-flash {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(123, 144, 182, 0.35);
+  --canvas-node-depth: 0;
 }
 
 .canvas-node-content {
@@ -152,13 +219,19 @@
   line-height: 1.35;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.38rem;
   text-align: left;
   align-items: flex-start;
 }
 
+.canvas-node strong {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(220, 228, 255, 0.92);
+}
+
 .canvas-node-link {
-  color: inherit;
+  color: #9bb8ff;
   text-decoration: underline;
   font-weight: 600;
 }
@@ -166,11 +239,56 @@
 .canvas-node img {
   max-width: 100%;
   max-height: 100%;
-  border-radius: 0.5rem;
+  border-radius: 0.55rem;
+  box-shadow: 0 8px 18px rgba(7, 9, 14, 0.5);
 }
 
 .canvas-node-image .canvas-node-content {
   align-items: center;
+}
+
+.canvas-wikilink {
+  border: none;
+  padding: 0;
+  background: none;
+  color: #a5b7ff;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.canvas-wikilink:hover,
+.canvas-wikilink:focus-visible {
+  color: #d0d7ff;
+  text-shadow: 0 0 12px rgba(148, 164, 255, 0.75);
+  outline: none;
+}
+
+.canvas-wikilink-unresolved {
+  color: rgba(160, 170, 196, 0.45);
+  text-decoration-style: dotted;
+  cursor: not-allowed;
+}
+
+.canvas-node-flash {
+  animation: canvas-node-flash 0.6s ease;
+}
+
+@keyframes canvas-node-flash {
+  0% {
+    box-shadow: 0 0 0 rgba(148, 164, 255, 0);
+    border-color: rgba(160, 178, 255, 0.25);
+  }
+  30% {
+    box-shadow: 0 0 28px rgba(160, 180, 255, 0.7);
+    border-color: var(--canvas-highlight-strong);
+  }
+  100% {
+    box-shadow: 0 16px 32px rgba(7, 9, 14, 0.55);
+    border-color: color-mix(in srgb, rgba(120, 138, 176, 0.6) 75%, rgba(188, 204, 255, 0.28) 25%);
+  }
 }
 
 .canvas-edges {
@@ -181,60 +299,77 @@
 }
 
 .canvas-edge {
+  --canvas-edge-glow-intensity: clamp(var(--canvas-edge-glow, 0), 0, 1);
   fill: none;
-  stroke: color-mix(in srgb, var(--secondary, #284b63) 60%, transparent);
-  stroke-width: 2.25;
+  stroke: color-mix(
+    in srgb,
+    var(--canvas-edge-base) calc(100% - var(--canvas-edge-glow-intensity) * 100%),
+    var(--canvas-edge-glow-color) calc(var(--canvas-edge-glow-intensity) * 100%)
+  );
+  stroke-width: 2.4;
   stroke-linecap: round;
-  opacity: 0.75;
-  transition: stroke 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+  opacity: calc(0.6 + var(--canvas-edge-glow-intensity) * 0.4);
+  transition: stroke 0.18s ease, opacity 0.18s ease, filter 0.18s ease;
   pointer-events: visibleStroke;
+  filter: drop-shadow(0 0 calc(8px + 16px * var(--canvas-edge-glow-intensity)) rgba(138, 160, 255, 0.45));
 }
 
-.canvas-edge-label {
-  font-size: 0.75rem;
-  fill: currentColor;
-  text-anchor: middle;
-  dominant-baseline: central;
-  paint-order: stroke;
-  stroke: color-mix(in srgb, var(--light, #fafafa) 80%, transparent);
-  stroke-width: 3px;
-  opacity: 0.9;
-  transition: opacity 0.2s ease, fill 0.2s ease;
-  pointer-events: none;
+.canvas-edge:hover,
+.canvas-edge:focus-visible {
+  opacity: 1;
+  stroke: color-mix(in srgb, var(--canvas-edge-base) 25%, var(--canvas-edge-glow-color) 75%);
+  outline: none;
 }
 
 .canvas-edge-active {
-  stroke: color-mix(in srgb, var(--tertiary, #84a59d) 85%, transparent);
   opacity: 1;
-  filter: drop-shadow(0 0 0.45rem color-mix(in srgb, var(--tertiary, #84a59d) 75%, transparent));
+  filter: drop-shadow(0 0 18px rgba(178, 192, 255, 0.8));
+}
+
+.canvas-edge-label {
+  --canvas-label-glow: clamp(var(--canvas-edge-label-glow, 0), 0, 1);
+  font-size: 0.78rem;
+  fill: color-mix(
+    in srgb,
+    rgba(207, 214, 255, 0.85) calc(100% - var(--canvas-label-glow) * 100%),
+    #f4f5ff calc(var(--canvas-label-glow) * 100%)
+  );
+  text-anchor: middle;
+  dominant-baseline: central;
+  paint-order: stroke;
+  stroke: rgba(18, 23, 31, 0.9);
+  stroke-width: 4px;
+  opacity: calc(0.75 + var(--canvas-label-glow) * 0.25);
+  transition: opacity 0.18s ease, fill 0.18s ease;
 }
 
 .canvas-edge-label-active {
   opacity: 1;
-  fill: color-mix(in srgb, var(--tertiary, #84a59d) 90%, transparent);
+  fill: #f4f5ff;
 }
 
-.canvas-node-active {
-  transform: translateY(-2px) scale(1.015);
-  border-color: color-mix(in srgb, var(--secondary, #284b63) 50%, transparent);
-  box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.24);
-  z-index: 2;
+.canvas-node-active:not(.canvas-node-group) {
+  --canvas-node-depth: 3;
+  transform: translateY(-3px) scale(1.02);
+  border-color: var(--canvas-highlight-strong);
+  box-shadow: 0 26px 54px rgba(16, 20, 32, 0.68);
 }
 
-.canvas-node-connected {
-  box-shadow: 0 0.5rem 1.4rem rgba(15, 23, 42, 0.18);
-  border-color: color-mix(in srgb, var(--secondary, #284b63) 35%, transparent);
+.canvas-node-connected:not(.canvas-node-group) {
+  --canvas-node-depth: 2;
+  box-shadow: 0 20px 40px rgba(14, 19, 32, 0.55);
+  border-color: color-mix(in srgb, var(--canvas-highlight) 60%, rgba(104, 126, 196, 0.65) 40%);
 }
 
 .canvas-node:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--tertiary, #84a59d) 70%, transparent);
+  outline: 2px solid rgba(157, 172, 255, 0.85);
   outline-offset: 3px;
 }
 
 .canvas-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
-  gap: 0.5rem;
+  gap: 0.55rem;
   margin: 0;
 }
 
@@ -242,25 +377,29 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.4rem 0.6rem;
-  border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--highlight, rgba(143, 159, 169, 0.15)) 60%, transparent);
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.55rem;
+  background: rgba(31, 40, 55, 0.7);
+  border: 1px solid rgba(82, 96, 126, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(131, 147, 186, 0.18);
 }
 
 .canvas-summary dt {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 600;
+  color: rgba(200, 209, 236, 0.86);
 }
 
 .canvas-summary dd {
   margin: 0;
   font-weight: 700;
+  color: rgba(234, 239, 255, 0.95);
 }
 
 .canvas-empty .canvas-viewport {
   display: grid;
   place-items: center;
-  color: color-mix(in srgb, currentColor 60%, transparent);
+  color: rgba(190, 198, 219, 0.7);
 }
 
 .canvas-empty .canvas-viewport::after {
@@ -268,85 +407,80 @@
   font-size: 0.9rem;
 }
 
+.canvas-viewer[data-fullscreen="true"],
 .canvas-viewer:fullscreen {
-  background: color-mix(in srgb, var(--dark, #0b1c26) 40%, var(--light, #f7f7f7));
+  background: radial-gradient(circle at top, rgba(13, 19, 28, 0.95), rgba(10, 13, 19, 0.99));
   border-radius: 0;
   box-shadow: none;
   padding: clamp(0.75rem, 3vh, 1.5rem);
 }
 
+.canvas-viewer[data-fullscreen="true"] .canvas-viewport,
 .canvas-viewer:fullscreen .canvas-viewport {
   min-height: calc(100vh - 6rem);
-  border-radius: 1rem;
-  border-color: color-mix(in srgb, var(--secondary, #284b63) 35%, transparent);
+  border-radius: 1.05rem;
+  border-color: rgba(129, 146, 201, 0.65);
   background:
-    linear-gradient(
-      0deg,
-      color-mix(in srgb, rgba(8, 29, 43, 0.65) 60%, transparent),
-      color-mix(in srgb, rgba(8, 29, 43, 0.35) 10%, transparent)
-    ),
-    repeating-linear-gradient(
-      0deg,
-      color-mix(in srgb, rgba(82, 110, 143, 0.45) 45%, transparent),
-      color-mix(in srgb, rgba(82, 110, 143, 0.45) 45%, transparent) 1px,
-      transparent 1px,
-      transparent 28px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      color-mix(in srgb, rgba(82, 110, 143, 0.45) 45%, transparent),
-      color-mix(in srgb, rgba(82, 110, 143, 0.45) 45%, transparent) 1px,
-      transparent 1px,
-      transparent 28px
-    );
+    linear-gradient(0deg, rgba(12, 18, 27, 0.92), rgba(16, 24, 36, 0.98)),
+    repeating-linear-gradient(0deg, rgba(60, 72, 102, 0.4), rgba(60, 72, 102, 0.4) 1px, transparent 1px, transparent 26px),
+    repeating-linear-gradient(90deg, rgba(60, 72, 102, 0.4), rgba(60, 72, 102, 0.4) 1px, transparent 1px, transparent 26px);
+  box-shadow: inset 0 0 35px rgba(5, 7, 10, 0.8);
 }
 
+.canvas-viewer[data-fullscreen="true"] .canvas-toolbar,
 .canvas-viewer:fullscreen .canvas-toolbar {
   position: absolute;
   top: clamp(0.75rem, 3vh, 1.5rem);
   right: clamp(0.75rem, 3vh, 1.5rem);
   margin: 0;
-  padding: 0.65rem 0.75rem;
+  padding: 0.7rem 0.85rem;
   border-radius: 999px;
-  background: color-mix(in srgb, rgba(9, 25, 36, 0.75) 70%, transparent);
-  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(12px);
-  gap: 0.75rem;
+  background: rgba(16, 22, 34, 0.88);
+  box-shadow: 0 28px 48px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px) saturate(1.2);
+  gap: 0.6rem;
 }
 
+.canvas-viewer[data-fullscreen="true"] .canvas-toolbar-group,
 .canvas-viewer:fullscreen .canvas-toolbar-group {
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
+.canvas-viewer[data-fullscreen="true"] .canvas-button,
 .canvas-viewer:fullscreen .canvas-button {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.6rem;
+  height: 2.6rem;
   font-size: 1.2rem;
 }
 
+.canvas-viewer[data-fullscreen="true"] .canvas-summary,
 .canvas-viewer:fullscreen .canvas-summary {
   position: absolute;
   bottom: clamp(0.75rem, 3vh, 1.5rem);
   right: clamp(0.75rem, 3vh, 1.5rem);
-  padding: 0.65rem 0.85rem;
-  border-radius: 0.75rem;
-  background: color-mix(in srgb, rgba(11, 28, 40, 0.75) 70%, transparent);
-  color: var(--light, #f7f7f7);
-  box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.35);
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.85rem;
+  background: rgba(18, 24, 36, 0.9);
+  color: #f3f6ff;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
 }
 
+.canvas-viewer[data-fullscreen="true"] .canvas-summary div,
 .canvas-viewer:fullscreen .canvas-summary div {
   background: transparent;
+  border-color: rgba(128, 140, 175, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(128, 140, 175, 0.25);
 }
 
+.canvas-viewer[data-fullscreen="true"] .canvas-hint,
 .canvas-viewer:fullscreen .canvas-hint {
   display: none;
 }
 
 @media (max-width: 960px) {
   .canvas-viewer {
-    padding: 0.85rem;
-    border-radius: 0.65rem;
+    padding: 0.9rem;
+    border-radius: 0.75rem;
   }
 
   .canvas-toolbar {
@@ -390,7 +524,7 @@
 
 @media (max-width: 480px) {
   .canvas-viewer {
-    padding: 0.75rem;
+    padding: 0.78rem;
   }
 
   .canvas-viewport {
@@ -398,7 +532,7 @@
   }
 
   .canvas-node {
-    padding: 0.6rem;
+    padding: 0.65rem;
   }
 
   .canvas-toolbar-group {
@@ -410,4 +544,3 @@
     flex: 1 1 calc(50% - 0.45rem);
   }
 }
-

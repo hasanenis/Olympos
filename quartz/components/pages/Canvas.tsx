@@ -44,6 +44,7 @@ const CanvasContent: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
   return (
     <article class="canvas-page">
       <div class="canvas-viewer" data-node-count={nodeCount} data-edge-count={edgeCount}>
+        <div class="canvas-overlay" aria-hidden="true"></div>
         <div class="canvas-toolbar" role="toolbar" aria-label="Canvas controls">
           <div class="canvas-toolbar-group">
             <button type="button" class="canvas-button" data-action="zoom-in" aria-label="Yakınlaştır">

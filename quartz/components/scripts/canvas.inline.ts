@@ -37,16 +37,176 @@ type EdgeCollections = {
   byNode: Map<string, Set<string>>
 }
 
+type WikiLinkRecord = {
+  element: HTMLButtonElement
+  target: string
+  raw: string
+  sourceId: string
+}
+
+type Cleanup = () => void
+
+type InteractionControls = {
+  cleanup: Cleanup
+  applyTransform: () => void
+  focusCanvasPoint: (point: Point, options?: { animate?: boolean; minScale?: number }) => void
+  state: ViewerState
+}
+
+type GlowElement = HTMLElement | SVGPathElement | SVGTextElement
+
+type GlowController = {
+  value: number
+  target: number
+  raf: number | null
+  step: (timestamp: number) => void
+}
+
+type IdleCallback = (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void
+
+const WIKILINK_PATTERN = /\[\[([^\]]+)\]\]/g
+const EDGE_FLASH_DURATION = 480
+const NODE_FLASH_DURATION = 640
+
+const glowRegistry = new WeakMap<GlowElement, Map<string, GlowController>>()
+
+const scheduleIdle = (callback: () => void, timeout = 48) => {
+  if (typeof window === "undefined") {
+    return
+  }
+  const idleWindow = window as Window & { requestIdleCallback?: (cb: IdleCallback, opts?: { timeout?: number }) => number }
+  if (typeof idleWindow.requestIdleCallback === "function") {
+    idleWindow.requestIdleCallback(() => callback(), { timeout })
+  } else {
+    window.setTimeout(callback, timeout)
+  }
+}
+
+function setGlowTarget(element: GlowElement, property: string, target: number, options?: { immediate?: boolean }) {
+  let propertyMap = glowRegistry.get(element)
+  if (!propertyMap) {
+    propertyMap = new Map<string, GlowController>()
+    glowRegistry.set(element, propertyMap)
+  }
+
+  let controller = propertyMap.get(property)
+  if (!controller) {
+    controller = {
+      value: Number.parseFloat(element.style.getPropertyValue(property)) || 0,
+      target,
+      raf: null,
+      step: () => {},
+    }
+
+    controller.step = () => {
+      const delta = controller!.target - controller!.value
+      if (Math.abs(delta) <= 0.003) {
+        controller!.value = controller!.target
+        element.style.setProperty(property, controller!.value.toFixed(3))
+        controller!.raf = null
+        return
+      }
+      controller!.value += delta * 0.22
+      element.style.setProperty(property, controller!.value.toFixed(3))
+      controller!.raf = window.requestAnimationFrame(controller!.step)
+    }
+
+    propertyMap.set(property, controller)
+  }
+
+  controller.target = target
+
+  if (options?.immediate) {
+    controller.value = target
+    element.style.setProperty(property, controller.value.toFixed(3))
+    if (controller.raf !== null) {
+      window.cancelAnimationFrame(controller.raf)
+      controller.raf = null
+    }
+    return
+  }
+
+  if (controller.raf === null) {
+    controller.raf = window.requestAnimationFrame(controller.step)
+  }
+}
+
+function animateGlow(element: GlowElement | null | undefined, property: string, active: boolean) {
+  if (!element) {
+    return
+  }
+  setGlowTarget(element, property, active ? 1 : 0)
+}
+
+function pulseGlow(element: GlowElement | null | undefined, property: string, peak = 1.18, hold = 360) {
+  if (!element) {
+    return
+  }
+  setGlowTarget(element, property, peak)
+  window.setTimeout(() => {
+    scheduleIdle(() => setGlowTarget(element, property, 0))
+  }, hold)
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
 
-function formatText(node: CanvasNode): DocumentFragment {
+function normaliseKey(value: string | null | undefined): string | null {
+  if (!value) {
+    return null
+  }
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return null
+  }
+  return trimmed.toLowerCase().replace(/\s+/g, " ")
+}
+
+function formatText(
+  text: string | undefined,
+  sourceId: string,
+  registerWikiLink: (record: WikiLinkRecord) => void,
+): DocumentFragment {
   const frag = document.createDocumentFragment()
-  const text = node.text ?? ""
+  if (!text) {
+    return frag
+  }
+
   const lines = text.split(/\r?\n/)
   lines.forEach((line, idx) => {
-    frag.append(document.createTextNode(line))
+    let cursor = 0
+    for (const match of line.matchAll(WIKILINK_PATTERN)) {
+      const [fullMatch, rawTarget] = match
+      const matchIndex = match.index ?? 0
+      if (matchIndex > cursor) {
+        frag.append(document.createTextNode(line.slice(cursor, matchIndex)))
+      }
+      const button = document.createElement("button")
+      button.type = "button"
+      button.className = "canvas-wikilink"
+      const textContent = rawTarget.trim()
+      button.textContent = textContent
+      button.dataset.sourceId = sourceId
+      const normalised = normaliseKey(rawTarget)
+      if (normalised) {
+        button.dataset.target = normalised
+        registerWikiLink({
+          element: button,
+          target: normalised,
+          raw: textContent,
+          sourceId,
+        })
+      } else {
+        button.disabled = true
+        button.classList.add("canvas-wikilink-disabled")
+      }
+      frag.append(button)
+      cursor = matchIndex + fullMatch.length
+    }
+    if (cursor < line.length) {
+      frag.append(document.createTextNode(line.slice(cursor)))
+    }
     if (idx < lines.length - 1) {
       frag.append(document.createElement("br"))
     }
@@ -72,7 +232,11 @@ function anchorFor(node: CanvasNode, side?: CanvasEdge["fromSide"], offset?: Poi
   }
 }
 
-function createNodeElement(node: CanvasNode, offset: Point): HTMLDivElement {
+function createNodeElement(
+  node: CanvasNode,
+  offset: Point,
+  registerWikiLink: (record: WikiLinkRecord) => void,
+): HTMLDivElement {
   const el = document.createElement("div")
   el.className = `canvas-node canvas-node-${node.type}`
   el.style.left = `${node.x - offset.x}px`
@@ -81,6 +245,8 @@ function createNodeElement(node: CanvasNode, offset: Point): HTMLDivElement {
   el.style.height = `${node.height}px`
   el.dataset.nodeId = node.id
   el.tabIndex = 0
+  el.style.setProperty("--canvas-node-glow", "0")
+  el.style.setProperty("--canvas-node-ping", "0")
 
   if (node.background) {
     el.style.setProperty("--canvas-node-bg", node.background)
@@ -92,14 +258,20 @@ function createNodeElement(node: CanvasNode, offset: Point): HTMLDivElement {
   const content = document.createElement("div")
   content.className = "canvas-node-content"
 
+  const register = (record: WikiLinkRecord) => registerWikiLink(record)
+
   if (node.type === "text") {
-    content.append(formatText(node))
+    content.append(formatText(node.text, node.id, register))
   } else if (node.type === "file" && node.file?.path) {
     const link = document.createElement("a")
     link.href = node.file.path
     link.textContent = node.label ?? node.file.path
     link.className = "canvas-node-link"
     content.append(link)
+    if (node.text) {
+      content.append(document.createElement("br"))
+      content.append(formatText(node.text, node.id, register))
+    }
   } else if (node.type === "link" && node.url) {
     const anchor = document.createElement("a")
     anchor.href = node.url
@@ -108,11 +280,19 @@ function createNodeElement(node: CanvasNode, offset: Point): HTMLDivElement {
     anchor.textContent = node.label ?? node.url
     anchor.className = "canvas-node-link"
     content.append(anchor)
+    if (node.text) {
+      content.append(document.createElement("br"))
+      content.append(formatText(node.text, node.id, register))
+    }
   } else if (node.type === "image" && node.image) {
     const img = document.createElement("img")
     img.src = node.image
     img.alt = node.label ?? "Canvas image"
     content.append(img)
+    if (node.text) {
+      content.append(document.createElement("br"))
+      content.append(formatText(node.text, node.id, register))
+    }
   } else {
     if (node.label) {
       const heading = document.createElement("strong")
@@ -123,7 +303,7 @@ function createNodeElement(node: CanvasNode, offset: Point): HTMLDivElement {
       }
     }
     if (node.text) {
-      content.append(formatText(node))
+      content.append(formatText(node.text, node.id, register))
     }
   }
 
@@ -186,13 +366,16 @@ function renderEdges(
 
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path")
     const midX = (start.x + end.x) / 2
-    const d = `M ${start.x} ${start.y} Q ${midX} ${start.y} ${end.x} ${end.y}`
+    const midY = (start.y + end.y) / 2
+    const d = `M ${start.x} ${start.y} Q ${midX} ${midY} ${end.x} ${end.y}`
     path.setAttribute("d", d)
     path.setAttribute("class", "canvas-edge")
     path.setAttribute("marker-end", "url(#canvas-arrow)")
+    path.tabIndex = 0
     path.dataset.edgeId = edgeId
     path.dataset.fromNode = edge.fromNode
     path.dataset.toNode = edge.toNode
+    path.style.setProperty("--canvas-edge-glow", "0")
     group.append(path)
 
     registerNodeEdge(edge.fromNode, edgeId)
@@ -208,6 +391,7 @@ function renderEdges(
       text.setAttribute("y", labelY.toString())
       text.setAttribute("class", "canvas-edge-label")
       text.dataset.edgeId = edgeId
+      text.style.setProperty("--canvas-edge-label-glow", "0")
       group.append(text)
     }
 
@@ -215,16 +399,51 @@ function renderEdges(
     const toElement = nodeElements.get(edge.toNode)
 
     const toggleActive = (active: boolean) => {
+      animateGlow(path, "--canvas-edge-glow", active)
       path.classList.toggle("canvas-edge-active", active)
       if (text) {
+        animateGlow(text, "--canvas-edge-label-glow", active)
         text.classList.toggle("canvas-edge-label-active", active)
       }
-      fromElement?.classList.toggle("canvas-node-active", active)
-      toElement?.classList.toggle("canvas-node-active", active)
+      if (fromElement && fromElement.dataset.nodeType !== "group") {
+        animateGlow(fromElement, "--canvas-node-glow", active)
+        fromElement.classList.toggle("canvas-node-active", active)
+      }
+      if (toElement && toElement.dataset.nodeType !== "group") {
+        animateGlow(toElement, "--canvas-node-glow", active)
+        toElement.classList.toggle("canvas-node-active", active)
+      }
     }
 
-    path.addEventListener("pointerenter", () => toggleActive(true))
-    path.addEventListener("pointerleave", () => toggleActive(false))
+    const activate = () => toggleActive(true)
+    const deactivate = () => toggleActive(false)
+    const flash = () => {
+      activate()
+      pulseGlow(path, "--canvas-edge-glow", 1.22, EDGE_FLASH_DURATION)
+      if (text) {
+        pulseGlow(text, "--canvas-edge-label-glow", 1.12, EDGE_FLASH_DURATION)
+      }
+      if (fromElement && fromElement.dataset.nodeType !== "group") {
+        pulseGlow(fromElement, "--canvas-node-ping", 1.18, EDGE_FLASH_DURATION)
+      }
+      if (toElement && toElement.dataset.nodeType !== "group") {
+        pulseGlow(toElement, "--canvas-node-ping", 1.18, EDGE_FLASH_DURATION)
+      }
+      window.setTimeout(() => deactivate(), EDGE_FLASH_DURATION)
+    }
+
+    path.addEventListener("pointerenter", activate)
+    path.addEventListener("pointerleave", deactivate)
+    path.addEventListener("focus", activate)
+    path.addEventListener("blur", deactivate)
+    path.addEventListener("pointerup", flash)
+    path.addEventListener("click", flash)
+    path.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault()
+        flash()
+      }
+    })
 
     edgeElements.set(edgeId, {
       id: edgeId,
@@ -238,13 +457,16 @@ function renderEdges(
   return { elements: edgeElements, byNode: edgesByNode }
 }
 
-type Cleanup = () => void
-
-function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
+function setupInteractions(viewer: HTMLElement, state: ViewerState): InteractionControls {
   const viewport = viewer.querySelector<HTMLDivElement>(".canvas-viewport")
   const inner = viewer.querySelector<HTMLDivElement>(".canvas-inner")
   if (!viewport || !inner) {
-    return () => {}
+    return {
+      cleanup: () => {},
+      applyTransform: () => {},
+      focusCanvasPoint: () => {},
+      state,
+    }
   }
 
   let isPanning = false
@@ -253,8 +475,38 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
   let startTranslateX = 0
   let startTranslateY = 0
 
+  const activeTouches = new Map<number, Point>()
+  let touchDistance: number | null = null
+  let touchCenter: Point | null = null
+  let pinchVelocity = 0
+  let pinchMomentumFrame: number | null = null
+  let pinchMomentumCenter: Point | null = null
+  let pinchActive = false
+
   const applyTransform = () => {
     inner.style.transform = `translate(${state.translateX}px, ${state.translateY}px) scale(${state.scale})`
+    viewer.dataset["scale"] = state.scale.toFixed(2)
+    viewer.dataset["translate"] = `${state.translateX},${state.translateY}`
+  }
+
+  const withAnimatedTransform = (callback: () => void, animate: boolean) => {
+    if (animate) {
+      inner.style.transition = "transform 220ms ease"
+    }
+    callback()
+    if (animate) {
+      window.setTimeout(() => {
+        inner.style.transition = ""
+      }, 240)
+    }
+  }
+
+  const updateTranslationBounds = () => {
+    const rect = viewport.getBoundingClientRect()
+    const minTranslateX = rect.width - state.width * state.scale
+    const minTranslateY = rect.height - state.height * state.scale
+    state.translateX = clamp(state.translateX, minTranslateX, 0)
+    state.translateY = clamp(state.translateY, minTranslateY, 0)
   }
 
   const zoomAroundPoint = (clientX: number, clientY: number, deltaScale: number) => {
@@ -266,34 +518,124 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
     state.scale = nextScale
     state.translateX = clientX - rect.left - offsetX * state.scale
     state.translateY = clientY - rect.top - offsetY * state.scale
-    state.translateX = clamp(state.translateX, rect.width - state.width * state.scale, 0)
-    state.translateY = clamp(state.translateY, rect.height - state.height * state.scale, 0)
+    updateTranslationBounds()
     applyTransform()
-    viewer.dataset["scale"] = state.scale.toFixed(2)
-    viewer.dataset["translate"] = `${state.translateX},${state.translateY}`
     viewport.dataset["panning"] = "false"
   }
 
+  const stopPinchMomentum = () => {
+    if (pinchMomentumFrame !== null) {
+      window.cancelAnimationFrame(pinchMomentumFrame)
+      pinchMomentumFrame = null
+    }
+  }
+
+  const startPinchMomentum = () => {
+    if (!pinchMomentumCenter) {
+      return
+    }
+    stopPinchMomentum()
+    const run = () => {
+      pinchVelocity *= 0.82
+      if (Math.abs(pinchVelocity) <= 0.002) {
+        pinchMomentumFrame = null
+        pinchVelocity = 0
+        return
+      }
+      const factor = clamp(1 + pinchVelocity, 0.75, 1.25)
+      zoomAroundPoint(pinchMomentumCenter!.x, pinchMomentumCenter!.y, factor)
+      pinchMomentumFrame = window.requestAnimationFrame(run)
+    }
+    pinchMomentumFrame = window.requestAnimationFrame(run)
+  }
+
   const onPointerDown = (event: PointerEvent) => {
-    if (event.button !== 0) {
+    if (event.pointerType === "mouse" && event.button !== 0) {
       return
     }
     const target = event.target as HTMLElement | null
     if (target?.closest("a, button, input, textarea")) {
       return
     }
-    isPanning = true
-    startX = event.clientX
-    startY = event.clientY
-    startTranslateX = state.translateX
-    startTranslateY = state.translateY
+
+    stopPinchMomentum()
+    if (event.pointerType === "touch") {
+      activeTouches.set(event.pointerId, { x: event.clientX, y: event.clientY })
+      if (activeTouches.size === 2) {
+        const touches = Array.from(activeTouches.values())
+        const dx = touches[1].x - touches[0].x
+        const dy = touches[1].y - touches[0].y
+        touchDistance = Math.hypot(dx, dy)
+        touchCenter = { x: touches[0].x + dx / 2, y: touches[0].y + dy / 2 }
+        pinchActive = true
+        pinchMomentumCenter = touchCenter
+        isPanning = false
+      } else if (activeTouches.size === 1) {
+        isPanning = true
+        startX = event.clientX
+        startY = event.clientY
+        startTranslateX = state.translateX
+        startTranslateY = state.translateY
+      }
+    } else {
+      isPanning = true
+      startX = event.clientX
+      startY = event.clientY
+      startTranslateX = state.translateX
+      startTranslateY = state.translateY
+    }
+
     viewport.setPointerCapture(event.pointerId)
-    viewport.dataset["panning"] = "true"
+    viewport.dataset["panning"] = isPanning ? "true" : "false"
     event.preventDefault()
   }
 
   const onPointerMove = (event: PointerEvent) => {
-    if (!isPanning) return
+    if (event.pointerType === "touch") {
+      if (!activeTouches.has(event.pointerId)) {
+        return
+      }
+      activeTouches.set(event.pointerId, { x: event.clientX, y: event.clientY })
+      if (activeTouches.size === 2) {
+        const touches = Array.from(activeTouches.values())
+        const dx = touches[1].x - touches[0].x
+        const dy = touches[1].y - touches[0].y
+        const newDistance = Math.hypot(dx, dy)
+        const center = { x: touches[0].x + dx / 2, y: touches[0].y + dy / 2 }
+        if (touchDistance && touchDistance > 0) {
+          const deltaRatio = newDistance / touchDistance
+          pinchVelocity = (deltaRatio - 1) * 0.65
+          const factor = clamp(1 + pinchVelocity, 0.75, 1.25)
+          pinchMomentumCenter = center
+          zoomAroundPoint(center.x, center.y, factor)
+        }
+        if (touchCenter) {
+          const rect = viewport.getBoundingClientRect()
+          const minTranslateX = rect.width - state.width * state.scale
+          const minTranslateY = rect.height - state.height * state.scale
+          const deltaX = center.x - touchCenter.x
+          const deltaY = center.y - touchCenter.y
+          state.translateX = clamp(state.translateX + deltaX, minTranslateX, 0)
+          state.translateY = clamp(state.translateY + deltaY, minTranslateY, 0)
+          applyTransform()
+        }
+        touchDistance = newDistance
+        touchCenter = center
+        pinchActive = true
+      } else if (isPanning) {
+        const dx = event.clientX - startX
+        const dy = event.clientY - startY
+        const rect = viewport.getBoundingClientRect()
+        state.translateX = clamp(startTranslateX + dx, rect.width - state.width * state.scale, 0)
+        state.translateY = clamp(startTranslateY + dy, rect.height - state.height * state.scale, 0)
+        applyTransform()
+      }
+      return
+    }
+
+    if (!isPanning) {
+      return
+    }
     const dx = event.clientX - startX
     const dy = event.clientY - startY
     const rect = viewport.getBoundingClientRect()
@@ -303,10 +645,31 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
   }
 
   const endPan = (event: PointerEvent) => {
-    if (!isPanning) return
+    let shouldStartMomentum = false
+    if (event.pointerType === "touch") {
+      activeTouches.delete(event.pointerId)
+      if (activeTouches.size < 2) {
+        shouldStartMomentum = pinchActive && Math.abs(pinchVelocity) > 0.001
+        pinchActive = false
+        touchDistance = null
+        touchCenter = null
+      }
+    }
+    if (viewport.hasPointerCapture(event.pointerId)) {
+      viewport.releasePointerCapture(event.pointerId)
+    }
+    if (!isPanning) {
+      viewport.dataset["panning"] = "false"
+      if (shouldStartMomentum) {
+        startPinchMomentum()
+      }
+      return
+    }
     isPanning = false
-    viewport.releasePointerCapture(event.pointerId)
     viewport.dataset["panning"] = "false"
+    if (shouldStartMomentum) {
+      startPinchMomentum()
+    }
   }
 
   const onPointerLeave = () => {
@@ -330,6 +693,8 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
   viewport.addEventListener("wheel", onWheel, { passive: false })
 
   const additionalCleanup: Array<() => void> = []
+  let savedTransform: { scale: number; translateX: number; translateY: number } | null = null
+  let wasFullscreen = false
 
   const fullscreenButton = viewer.querySelector<HTMLButtonElement>(".canvas-button[data-action='fullscreen']")
 
@@ -369,6 +734,28 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
   const updateFullscreenState = () => {
     const isFullscreen = getFullscreenElement() === viewer
     viewer.dataset.fullscreen = isFullscreen ? "true" : "false"
+    if (isFullscreen && !wasFullscreen) {
+      savedTransform = { scale: state.scale, translateX: state.translateX, translateY: state.translateY }
+      const rect = viewport.getBoundingClientRect()
+      const fitScale = Math.min(rect.width / state.width, rect.height / state.height)
+      if (Number.isFinite(fitScale) && fitScale > 0) {
+        state.scale = clamp(fitScale, state.minScale, state.maxScale)
+        state.translateX = (rect.width - state.width * state.scale) / 2
+        state.translateY = (rect.height - state.height * state.scale) / 2
+      }
+      updateTranslationBounds()
+      applyTransform()
+    } else if (!isFullscreen && wasFullscreen) {
+      if (savedTransform) {
+        state.scale = clamp(savedTransform.scale, state.minScale, state.maxScale)
+        state.translateX = savedTransform.translateX
+        state.translateY = savedTransform.translateY
+        savedTransform = null
+      }
+      updateTranslationBounds()
+      applyTransform()
+    }
+    wasFullscreen = isFullscreen
     if (!fullscreenButton) return
     fullscreenButton.setAttribute("aria-pressed", isFullscreen ? "true" : "false")
     const labelKey = isFullscreen ? "tooltipExit" : "tooltipEnter"
@@ -473,25 +860,46 @@ function setupInteractions(viewer: HTMLElement, state: ViewerState): Cleanup {
     const scaleX = rect.width / state.width
     const scaleY = rect.height / state.height
     const bestFit = clamp(Math.min(scaleX, scaleY), state.minScale, state.maxScale)
-    if (bestFit > state.scale) {
-      state.scale = bestFit
-      state.translateX = (rect.width - state.width * state.scale) / 2
-      state.translateY = (rect.height - state.height * state.scale) / 2
-      applyTransform()
+    if (Number.isFinite(bestFit) && bestFit > 0) {
+      state.scale = Math.min(state.maxScale, Math.max(state.minScale, bestFit))
     }
+    updateTranslationBounds()
+    applyTransform()
   })
   resizeObserver.observe(viewport)
 
-  return () => {
-    viewport.removeEventListener("pointerdown", onPointerDown)
-    viewport.removeEventListener("pointermove", onPointerMove)
-    viewport.removeEventListener("pointerup", endPan)
-    viewport.removeEventListener("pointercancel", endPan)
-    viewport.removeEventListener("pointerleave", onPointerLeave)
-    viewport.removeEventListener("wheel", onWheel)
-    buttonHandlers.forEach((cleanup) => cleanup())
-    resizeObserver.disconnect()
-    additionalCleanup.forEach((cleanup) => cleanup())
+  const focusCanvasPoint = (point: Point, options?: { animate?: boolean; minScale?: number }) => {
+    const rect = viewport.getBoundingClientRect()
+    if (options?.minScale && options.minScale > state.scale) {
+      state.scale = clamp(options.minScale, state.minScale, state.maxScale)
+    }
+    const centerX = rect.width / 2 - point.x * state.scale
+    const centerY = rect.height / 2 - point.y * state.scale
+    const minTranslateX = rect.width - state.width * state.scale
+    const minTranslateY = rect.height - state.height * state.scale
+    state.translateX = clamp(centerX, minTranslateX, 0)
+    state.translateY = clamp(centerY, minTranslateY, 0)
+    withAnimatedTransform(() => applyTransform(), options?.animate ?? true)
+  }
+
+  return {
+    cleanup: () => {
+      viewport.removeEventListener("pointerdown", onPointerDown)
+      viewport.removeEventListener("pointermove", onPointerMove)
+      viewport.removeEventListener("pointerup", endPan)
+      viewport.removeEventListener("pointercancel", endPan)
+      viewport.removeEventListener("pointerleave", onPointerLeave)
+      viewport.removeEventListener("wheel", onWheel)
+      buttonHandlers.forEach((cleanup) => cleanup())
+      resizeObserver.disconnect()
+      additionalCleanup.forEach((cleanup) => cleanup())
+      if (pinchMomentumFrame !== null) {
+        window.cancelAnimationFrame(pinchMomentumFrame)
+      }
+    },
+    applyTransform,
+    focusCanvasPoint,
+    state,
   }
 }
 
@@ -504,6 +912,7 @@ function initialiseViewer(viewer: HTMLElement) {
   const svg = viewer.querySelector<SVGSVGElement>(".canvas-edges")
   if (!script || !script.textContent || !nodesContainer || !svg) return
 
+  const viewerCleanup: Cleanup[] = []
   let data: CanvasData
   try {
     data = JSON.parse(script.textContent) as CanvasData
@@ -529,9 +938,16 @@ function initialiseViewer(viewer: HTMLElement) {
 
   const nodeMap = new Map<string, CanvasNode>()
   const nodeElements = new Map<string, HTMLDivElement>()
+  const wikiLinks: WikiLinkRecord[] = []
+
+  const registerWikiLink = (record: WikiLinkRecord) => {
+    wikiLinks.push(record)
+  }
+
   nodesContainer.innerHTML = ""
   nodes.forEach((node) => {
-    const element = createNodeElement(node, offset)
+    const element = createNodeElement(node, offset, registerWikiLink)
+    element.dataset.nodeType = node.type
     nodesContainer.append(element)
     nodeMap.set(node.id, node)
     nodeElements.set(node.id, element)
@@ -553,7 +969,11 @@ function initialiseViewer(viewer: HTMLElement) {
     if (!element) {
       return
     }
-    element.classList.toggle("canvas-node-active", active)
+    const nodeType = element.dataset.nodeType
+    if (nodeType !== "group") {
+      element.classList.toggle("canvas-node-active", active)
+      animateGlow(element, "--canvas-node-glow", active)
+    }
     const edgeIds = edgesByNode.get(nodeId)
     if (!edgeIds) {
       return
@@ -562,22 +982,42 @@ function initialiseViewer(viewer: HTMLElement) {
       const record = edgeElements.get(edgeId)
       if (!record) return
       record.path.classList.toggle("canvas-edge-active", active)
-      record.label?.classList.toggle("canvas-edge-label-active", active)
+      animateGlow(record.path, "--canvas-edge-glow", active)
+      if (record.label) {
+        record.label.classList.toggle("canvas-edge-label-active", active)
+        animateGlow(record.label, "--canvas-edge-label-glow", active)
+      }
       const otherId = record.from === nodeId ? record.to : record.from
       if (otherId !== nodeId) {
         const otherNode = nodeElements.get(otherId)
-        otherNode?.classList.toggle("canvas-node-connected", active)
+        if (otherNode && otherNode.dataset.nodeType !== "group") {
+          otherNode.classList.toggle("canvas-node-connected", active)
+          animateGlow(otherNode, "--canvas-node-glow", active)
+        }
       }
     })
   }
 
   nodeElements.forEach((element, nodeId) => {
+    const nodeType = element.dataset.nodeType
+    if (nodeType === "group") {
+      return
+    }
     const activate = () => highlightNodeEdges(nodeId, true)
     const deactivate = () => highlightNodeEdges(nodeId, false)
     element.addEventListener("pointerenter", activate)
     element.addEventListener("pointerleave", deactivate)
     element.addEventListener("focus", activate)
     element.addEventListener("blur", deactivate)
+    element.addEventListener("pointerdown", (event) => {
+      if ((event.target as HTMLElement | null)?.closest("a, button")) {
+        return
+      }
+      highlightNodeEdges(nodeId, true)
+      pulseGlow(element, "--canvas-node-ping", 1.2, NODE_FLASH_DURATION)
+    })
+    element.addEventListener("pointerup", () => highlightNodeEdges(nodeId, false))
+    element.addEventListener("pointercancel", () => highlightNodeEdges(nodeId, false))
   })
 
   const state: ViewerState = {
@@ -601,16 +1041,139 @@ function initialiseViewer(viewer: HTMLElement) {
         state.translateY = (rect.height - height * state.scale) / 2
       }
     }
-    inner.style.transform = `translate(${state.translateX}px, ${state.translateY}px) scale(${state.scale})`
   }
 
-  const cleanup = setupInteractions(viewer, state)
+  const interactions = setupInteractions(viewer, state)
+  interactions.applyTransform()
+  viewerCleanup.push(() => interactions.cleanup())
+
+  const focusNode = (nodeId: string, options?: { animate?: boolean; minScale?: number }) => {
+    const node = nodeMap.get(nodeId)
+    const element = nodeElements.get(nodeId)
+    if (!node || !element) {
+      return
+    }
+    const point: Point = {
+      x: node.x - offset.x + node.width / 2,
+      y: node.y - offset.y + node.height / 2,
+    }
+    interactions.focusCanvasPoint(point, options)
+    element.classList.add("canvas-node-flash")
+    highlightNodeEdges(nodeId, true)
+    pulseGlow(element, "--canvas-node-ping", 1.35, NODE_FLASH_DURATION + 120)
+    animateGlow(element, "--canvas-node-glow", true)
+    window.setTimeout(() => {
+      element.classList.remove("canvas-node-flash")
+      scheduleIdle(() => {
+        highlightNodeEdges(nodeId, false)
+        animateGlow(element, "--canvas-node-glow", false)
+      })
+    }, NODE_FLASH_DURATION)
+  }
+
+  const targetMap = new Map<string, string>()
+  const registerTarget = (value: string | null | undefined, nodeId: string) => {
+    const key = normaliseKey(value)
+    if (!key || targetMap.has(key)) {
+      return
+    }
+    targetMap.set(key, nodeId)
+  }
+
+  nodes.forEach((node) => {
+    registerTarget(node.id, node.id)
+    registerTarget(node.label, node.id)
+    if (node.text) {
+      const firstLine = node.text.split(/\r?\n/)[0]
+      registerTarget(firstLine, node.id)
+    }
+    if (node.file?.path) {
+      registerTarget(node.file.path, node.id)
+    }
+  })
+
+  const updateHistoryForNode = (nodeId: string, mode: "push" | "replace" = "push") => {
+    if (typeof window === "undefined") {
+      return
+    }
+    try {
+      const slug = encodeURIComponent(nodeId)
+      const { pathname, search } = window.location
+      const newUrl = `${pathname}${search}#canvas-${slug}`
+      if (mode === "push" && typeof window.history.pushState === "function") {
+        window.history.pushState({ canvasNode: nodeId }, "", newUrl)
+      } else if (typeof window.history.replaceState === "function") {
+        window.history.replaceState({ canvasNode: nodeId }, "", newUrl)
+      } else {
+        window.location.hash = `canvas-${slug}`
+      }
+    } catch (error) {
+      console.warn("Quartz: Failed to update canvas history", error)
+    }
+  }
+
+  const applyHashFocus = (mode: "replace" | "push" = "replace") => {
+    if (typeof window === "undefined") {
+      return
+    }
+    const rawHash = window.location.hash
+    if (!rawHash.startsWith("#canvas-")) {
+      return
+    }
+    const rawValue = decodeURIComponent(rawHash.slice("#canvas-".length))
+    if (nodeMap.has(rawValue)) {
+      focusNode(rawValue, { animate: mode !== "replace", minScale: 0.6 })
+      return
+    }
+    const normalised = normaliseKey(rawValue)
+    if (!normalised) {
+      return
+    }
+    const mapped = targetMap.get(normalised)
+    if (mapped) {
+      focusNode(mapped, { animate: mode !== "replace", minScale: 0.6 })
+    }
+  }
+
+  wikiLinks.forEach((record) => {
+    const targetId = targetMap.get(record.target)
+    if (!targetId) {
+      record.element.classList.add("canvas-wikilink-unresolved")
+      record.element.disabled = true
+      return
+    }
+    record.element.dataset.targetId = targetId
+    const triggerFocus = () => {
+      focusNode(targetId, { animate: true, minScale: 0.6 })
+      updateHistoryForNode(targetId, "push")
+    }
+    record.element.addEventListener("click", triggerFocus)
+    record.element.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault()
+        triggerFocus()
+      }
+    })
+  })
+
+  if (typeof window !== "undefined") {
+    applyHashFocus("replace")
+    const onPopState = () => applyHashFocus("replace")
+    const onHashChange = () => applyHashFocus("replace")
+    window.addEventListener("popstate", onPopState)
+    window.addEventListener("hashchange", onHashChange)
+    viewerCleanup.push(() => {
+      window.removeEventListener("popstate", onPopState)
+      window.removeEventListener("hashchange", onHashChange)
+    })
+  }
+
   viewer.dataset["loaded"] = "true"
   viewer.dataset.canvasInitialised = "true"
 
   if (typeof window !== "undefined" && typeof window.addCleanup === "function") {
     window.addCleanup(() => {
-      cleanup()
+      viewerCleanup.forEach((cleanup) => cleanup())
       viewer.dataset.canvasInitialised = "false"
       viewer.dataset["loaded"] = "false"
     })
