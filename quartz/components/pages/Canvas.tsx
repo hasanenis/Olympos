@@ -51,6 +51,7 @@ const CanvasContent: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
         id={viewerId}
         data-node-count={nodeCount}
         data-edge-count={edgeCount}
+        data-revision="reupload"
       >
         <div
           class="canvas-toolbar"
