@@ -1,0 +1,220 @@
+.canvas-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.canvas-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--light, #f7f7f7);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08);
+  border: 1px solid color-mix(in srgb, var(--darkgray, #444) 12%, transparent);
+}
+
+.canvas-viewer[data-loaded="true"] .canvas-viewport {
+  background: color-mix(in srgb, var(--lightgray, #ddd) 40%, transparent);
+}
+
+.canvas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.canvas-toolbar-group {
+  display: inline-flex;
+  gap: 0.4rem;
+}
+
+.canvas-button {
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background: color-mix(in srgb, var(--secondary, #284b63) 15%, transparent);
+  color: inherit;
+  border-radius: 0.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.canvas-button:focus-visible {
+  outline: 2px solid var(--tertiary, #84a59d);
+  outline-offset: 2px;
+}
+
+.canvas-button:hover {
+  background: color-mix(in srgb, var(--secondary, #284b63) 30%, transparent);
+  transform: translateY(-1px);
+}
+
+.canvas-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, currentColor 70%, transparent);
+}
+
+.canvas-viewport {
+  position: relative;
+  width: 100%;
+  min-height: clamp(20rem, 70vh, 36rem);
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--darkgray, #444) 18%, transparent);
+  background: repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--lightgray, #ddd) 24%, transparent),
+      color-mix(in srgb, var(--lightgray, #ddd) 24%, transparent) 1px,
+      transparent 1px,
+      transparent 32px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--lightgray, #ddd) 24%, transparent),
+      color-mix(in srgb, var(--lightgray, #ddd) 24%, transparent) 1px,
+      transparent 1px,
+      transparent 32px
+    );
+  overflow: hidden;
+  cursor: grab;
+}
+
+.canvas-viewport[data-panning="true"] {
+  cursor: grabbing;
+}
+
+.canvas-inner {
+  position: absolute;
+  inset: 0;
+  transform-origin: top left;
+}
+
+.canvas-nodes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.canvas-node {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  background: var(--canvas-node-bg, color-mix(in srgb, var(--light, #fafafa) 90%, transparent));
+  color: var(--canvas-node-color, inherit);
+  box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.12);
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: auto;
+}
+
+.canvas-node-content {
+  font-size: 0.95rem;
+  line-height: 1.35;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.canvas-node-link {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.canvas-node img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 0.5rem;
+}
+
+.canvas-edges {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.canvas-edge {
+  fill: none;
+  stroke: color-mix(in srgb, var(--secondary, #284b63) 65%, transparent);
+  stroke-width: 2;
+}
+
+.canvas-edge-label {
+  font-size: 0.75rem;
+  fill: currentColor;
+  text-anchor: middle;
+  dominant-baseline: central;
+  paint-order: stroke;
+  stroke: color-mix(in srgb, var(--light, #fafafa) 80%, transparent);
+  stroke-width: 3px;
+}
+
+.canvas-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.canvas-summary div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--highlight, rgba(143, 159, 169, 0.15)) 60%, transparent);
+}
+
+.canvas-summary dt {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.canvas-summary dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.canvas-empty .canvas-viewport {
+  display: grid;
+  place-items: center;
+  color: color-mix(in srgb, currentColor 60%, transparent);
+}
+
+.canvas-empty .canvas-viewport::after {
+  content: "Canvas verisi bulunamadı";
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .canvas-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .canvas-toolbar-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .canvas-button {
+    flex: 1;
+  }
+
+  .canvas-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
