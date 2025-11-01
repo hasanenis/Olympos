@@ -157,7 +157,7 @@
     box-shadow 0.3s ease;
   cursor: grab;
   box-shadow: 0 16px 32px rgba(7, 9, 14, 0.55);
-  --canvas-node-depth: 1;
+--canvas-node-depth: 1; 
   --canvas-node-glow: var(--canvas-node-glow, 0);
   --canvas-node-ping: var(--canvas-node-ping, 0);
   z-index: var(--canvas-node-depth);
