@@ -8,7 +8,8 @@ import { QuartzConfig } from "../../cfg"
 
 const filesToCopy = async (argv: Argv, cfg: QuartzConfig) => {
   // glob all non MD files in content folder and copy it over
-  return await glob("**", argv.directory, ["**/*.md", ...cfg.configuration.ignorePatterns])
+  const matches = await glob("**", argv.directory, ["**/*.md", ...cfg.configuration.ignorePatterns])
+  return matches.filter((fp) => !fp.endsWith(".canvas"))
 }
 
 const copyFile = async (argv: Argv, fp: FilePath) => {
@@ -37,7 +38,7 @@ export const Assets: QuartzEmitterPlugin = () => {
     async *partialEmit(ctx, _content, _resources, changeEvents) {
       for (const changeEvent of changeEvents) {
         const ext = path.extname(changeEvent.path)
-        if (ext === ".md") continue
+        if (ext === ".md" || ext === ".canvas") continue
 
         if (changeEvent.type === "add" || changeEvent.type === "change") {
           yield copyFile(ctx.argv, changeEvent.path)
