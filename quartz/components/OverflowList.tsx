@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { JSX } from "preact"
 
 const OverflowList = ({

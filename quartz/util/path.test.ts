@@ -1,7 +1,12 @@
 import test, { describe } from "node:test"
 import * as path from "./path"
 import assert from "node:assert"
-import { FullSlug, TransformOptions, SimpleSlug } from "./path"
+import { FullSlug, TransformOptions, SimpleSlug, FilePath, RelativeURL } from "./path"
+
+const asFullSlug = (value: string): FullSlug => value as FullSlug
+const asSimpleSlug = (value: string): SimpleSlug => value as SimpleSlug
+const asFilePath = (value: string): FilePath => value as FilePath
+const asRelativeURL = (value: string): RelativeURL => value as RelativeURL
 
 describe("typeguards", () => {
   test("isSimpleSlug", () => {
@@ -74,31 +79,31 @@ describe("typeguards", () => {
 
 describe("transforms", () => {
   function asserts<Inp, Out>(
-    pairs: [string, string][],
+    pairs: ReadonlyArray<[Inp, Out]>,
     transform: (inp: Inp) => Out,
     checkPre: (x: any) => x is Inp,
     checkPost: (x: any) => x is Out,
   ) {
     for (const [inp, expected] of pairs) {
-      assert(checkPre(inp), `${inp} wasn't the expected input type`)
+      assert(checkPre(inp), `${inp as string} wasn't the expected input type`)
       const actual = transform(inp)
       assert.strictEqual(
         actual,
         expected,
         `after transforming ${inp}, '${actual}' was not '${expected}'`,
       )
-      assert(checkPost(actual), `${actual} wasn't the expected output type`)
+      assert(checkPost(actual), `${actual as string} wasn't the expected output type`)
     }
   }
 
   test("simplifySlug", () => {
     asserts(
       [
-        ["index", "/"],
-        ["abc", "abc"],
-        ["abc/index", "abc/"],
-        ["abc/def", "abc/def"],
-      ],
+        [asFullSlug("index"), asSimpleSlug("/")],
+        [asFullSlug("abc"), asSimpleSlug("abc")],
+        [asFullSlug("abc/index"), asSimpleSlug("abc/")],
+        [asFullSlug("abc/def"), asSimpleSlug("abc/def")],
+      ] as Array<[FullSlug, SimpleSlug]>,
       path.simplifySlug,
       path.isFullSlug,
       path.isSimpleSlug,
@@ -108,19 +113,19 @@ describe("transforms", () => {
   test("slugifyFilePath", () => {
     asserts(
       [
-        ["content/index.md", "content/index"],
-        ["content/index.html", "content/index"],
-        ["content/_index.md", "content/index"],
-        ["/content/index.md", "content/index"],
-        ["content/cool.png", "content/cool.png"],
-        ["index.md", "index"],
-        ["test.mp4", "test.mp4"],
-        ["note with spaces.md", "note-with-spaces"],
-        ["notes.with.dots.md", "notes.with.dots"],
-        ["test/special chars?.md", "test/special-chars"],
-        ["test/special chars #3.md", "test/special-chars-3"],
-        ["cool/what about r&d?.md", "cool/what-about-r-and-d"],
-      ],
+        [asFilePath("content/index.md"), asFullSlug("content/index")],
+        [asFilePath("content/index.html"), asFullSlug("content/index")],
+        [asFilePath("content/_index.md"), asFullSlug("content/index")],
+        [asFilePath("/content/index.md"), asFullSlug("content/index")],
+        [asFilePath("content/cool.png"), asFullSlug("content/cool.png")],
+        [asFilePath("index.md"), asFullSlug("index")],
+        [asFilePath("test.mp4"), asFullSlug("test.mp4")],
+        [asFilePath("note with spaces.md"), asFullSlug("note-with-spaces")],
+        [asFilePath("notes.with.dots.md"), asFullSlug("notes.with.dots")],
+        [asFilePath("test/special chars?.md"), asFullSlug("test/special-chars")],
+        [asFilePath("test/special chars #3.md"), asFullSlug("test/special-chars-3")],
+        [asFilePath("cool/what about r&d?.md"), asFullSlug("cool/what-about-r-and-d")],
+      ] as Array<[FilePath, FullSlug]>,
       path.slugifyFilePath,
       path.isFilePath,
       path.isFullSlug,
@@ -158,12 +163,12 @@ describe("transforms", () => {
   test("pathToRoot", () => {
     asserts(
       [
-        ["index", "."],
-        ["abc", "."],
-        ["abc/def", ".."],
-        ["abc/def/ghi", "../.."],
-        ["abc/def/index", "../.."],
-      ],
+        [asFullSlug("index"), asRelativeURL(".")],
+        [asFullSlug("abc"), asRelativeURL(".")],
+        [asFullSlug("abc/def"), asRelativeURL("..")],
+        [asFullSlug("abc/def/ghi"), asRelativeURL("../..")],
+        [asFullSlug("abc/def/index"), asRelativeURL("../..")],
+      ] as Array<[FullSlug, RelativeURL]>,
       path.pathToRoot,
       path.isFullSlug,
       path.isRelativeURL,

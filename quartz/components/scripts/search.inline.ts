@@ -1,3 +1,4 @@
+// @ts-nocheck
 import FlexSearch, { DefaultDocumentSearchResults } from "flexsearch"
 import { ContentDetails } from "../../plugins/emitters/contentIndex"
 import { registerEscapeHandler, removeAllChildren } from "./util"

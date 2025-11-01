@@ -1488,7 +1488,7 @@ function initialiseViewer(viewer: HTMLElement) {
   }
 }
 
-function setupCanvas(root: ParentNode = document) {
+function setupCanvas(root: ParentNode = document as unknown as ParentNode) {
   root.querySelectorAll<HTMLElement>(".canvas-viewer").forEach((viewer) => {
     initialiseViewer(viewer)
   })

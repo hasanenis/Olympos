@@ -148,7 +148,7 @@ export const TagPage: QuartzEmitterPlugin<Partial<TagPageOptions>> = (userOpts) 
 
         // If a file with tags changed, we need to update those tag pages
         const fileTags = changeEvent.file.data.frontmatter?.tags ?? []
-        fileTags.flatMap(getAllSegmentPrefixes).forEach((tag) => affectedTags.add(tag))
+        fileTags.flatMap(getAllSegmentPrefixes).forEach((tag: string) => affectedTags.add(tag))
 
         // Always update the index tag page if any file changes
         affectedTags.add("index")

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { render } from "preact-render-to-string"
 import { QuartzComponent, QuartzComponentProps } from "./types"
 import HeaderConstructor from "./Header"

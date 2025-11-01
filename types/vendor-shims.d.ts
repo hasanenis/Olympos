@@ -13,28 +13,45 @@ declare namespace JSX {
 }
 
 declare module "unified" {
-  export type Processor = {
-    use: (...pluggables: PluggableList) => Processor
-    process: (...input: any[]) => Promise<any>
-    parse: (...input: any[]) => any
-    run: (...input: any[]) => Promise<any>
-    stringify: (...input: any[]) => string
-  }
-
-  export type Plugin<Parameters extends any[] = any[]> = (
-    ...parameters: Parameters
-  ) => void | Processor | Promise<void | Processor> | ((...args: any[]) => any)
-
-  export type Pluggable = Plugin | [Plugin, ...any[]] | Pluggable[] | false | null | undefined
+  export type Pluggable = Plugin<any> | [Plugin<any>, ...any[]] | Pluggable[] | false | null | undefined
   export type PluggableList = Pluggable | Pluggable[]
 
-  export function unified(): Processor
+  export interface Processor<Input = any, Intermediate = any, Output = any, Data = any> {
+    use: (...pluggables: PluggableList) => Processor<Input, Intermediate, Output, Data>
+    process: (...input: any[]) => Promise<Output>
+    parse: (...input: any[]) => Intermediate
+    run: (...input: any[]) => Promise<Intermediate>
+    stringify: (...input: any[]) => string
+    data?: Data
+  }
+
+  export type Plugin<Parameters extends any[] = any[], Proc extends Processor = Processor> = (
+    ...parameters: Parameters
+  ) => void | Proc | Promise<void | Proc> | ((...args: any[]) => any)
+
+  export function unified<Input = any, Intermediate = any, Output = any, Data = any>(): Processor<
+    Input,
+    Intermediate,
+    Output,
+    Data
+  >
 }
 
 declare module "vfile" {
   export interface DataMap {
     [key: string]: any
+    aliases?: any[]
+    dates?: any
+    description?: string
+    text?: string
+    title?: string
+    frontmatter?: any
+    tags?: any
+    slug?: any
+    filePath?: any
   }
+
+  export type Data = DataMap
 
   export class VFile<Message = any> {
     constructor(options?: string | { value?: string; path?: string; data?: DataMap })
@@ -55,6 +72,8 @@ declare module "hast" {
   export type Root = any
   export type Element = any
   export type Properties = Record<string, any>
+  export type Node = any
+  export type Literal = any
 }
 
 declare module "mdast" {
@@ -65,15 +84,31 @@ declare module "mdast" {
   export type Paragraph = any
   export type Link = any
   export type Node = any
+  export type BlockContent = any
+  export type PhrasingContent = any
+  export type DefinitionContent = any
+  export type Code = any
 }
 
 declare module "preact" {
   export type ComponentChildren = any
-  export type FunctionalComponent<P = {}> = (props: P & { children?: ComponentChildren }) => any
+  export type FunctionalComponent<P = {}> = ((props: P & { children?: ComponentChildren }) => any) & {
+    displayName?: string
+    defaultProps?: Partial<P>
+  }
   export type ComponentType<P = {}> = FunctionalComponent<P>
   export type VNode = any
   export type Ref<T = any> = { current: T | null }
   export const Fragment: any
+  export namespace JSX {
+    type Element = any
+    interface IntrinsicElements {
+      [key: string]: any
+    }
+    interface IntrinsicAttributes {
+      [key: string]: any
+    }
+  }
   export function h(type: any, props: any, ...children: any[]): any
   export function createElement(type: any, props: any, ...children: any[]): any
 }
@@ -91,6 +126,25 @@ declare module "preact/jsx-runtime" {
   export const jsx: any
   export const jsxs: any
   export const Fragment: any
+  export namespace JSX {
+    type Element = any
+    interface IntrinsicElements {
+      [key: string]: any
+    }
+  }
+}
+
+declare module "preact/src/jsx" {
+  export namespace JSXInternal {
+    type Element = any
+    interface IntrinsicElements {
+      [key: string]: any
+    }
+    interface IntrinsicAttributes {
+      [key: string]: any
+    }
+  }
+  export = JSXInternal
 }
 
 declare module "preact-render-to-string" {
@@ -104,19 +158,430 @@ declare module "unist" {
 }
 
 declare module "unist-util-visit" {
-  export type BuildVisitor<T = any> = (
-    node: T,
+  export type BuildVisitor<Tree = any, Check = any> = (
+    node: any,
     index: number | null,
-    parent: T | null,
+    parent: any | null,
   ) => void | boolean | number | Promise<void | boolean | number>
 
-  export type Visitor<T = any> = (
-    node: T,
+  export type Visitor<Node = any> = (
+    node: Node,
     index: number | null,
-    parent: T | null,
-  ) => void | boolean | number | Promise<void | boolean | number>
+    parent: any | null,
+  ) => void | boolean | number | typeof SKIP | Promise<void | boolean | number | typeof SKIP>
 
-  export function visit<Tree = any, Node = any>(tree: Tree, test: any, visitor: Visitor<Node>): void
+  export function visit<Tree = any, Check = any>(
+    tree: Tree,
+    test: Check,
+    visitor: Visitor<any>,
+  ): void
+  export const SKIP: unique symbol
+}
+
+declare module "globby" {
+  export type GlobbyFilterFunction = (path: string) => boolean
+  export type GlobbyPattern = string | readonly string[]
+  export type GlobbyOptions = Record<string, any>
+
+  export function globby(patterns: GlobbyPattern, options?: GlobbyOptions): Promise<string[]>
+  export function globbySync(patterns: GlobbyPattern, options?: GlobbyOptions): string[]
+  export function isGitIgnored(options?: GlobbyOptions): Promise<GlobbyFilterFunction>
+  export function generateGlobTasks(patterns: GlobbyPattern, options?: GlobbyOptions): any[]
+
+  const globbyExport: typeof globby
+  export default globbyExport
+}
+
+declare module "chokidar" {
+  export interface FSWatcher {
+    on(event: "add" | "change" | "unlink", listener: (path: string) => void): FSWatcher
+    on(event: string, listener: (...args: any[]) => void): FSWatcher
+    close(): Promise<void>
+  }
+
+  export interface WatchOptions {
+    persistent?: boolean
+    ignoreInitial?: boolean
+    ignored?: any
+    cwd?: string
+    depth?: number
+    awaitWriteFinish?: any
+  }
+
+  export function watch(paths: string | readonly string[], options?: WatchOptions): FSWatcher
+  export default watch
+}
+
+declare module "github-slugger" {
+  export type Options = {
+    maintainCase?: boolean
+    truncate?: number
+  }
+
+  export function slug(value: string, options?: Options): string
+
+  export default class GithubSlugger {
+    slug(value: string, options?: Options): string
+    reset(): void
+  }
+}
+
+declare module "satori/wasm" {
+  export type FontWeight = number | string
+  export interface FontConfig {
+    name: string
+    data: ArrayBuffer | Uint8Array
+    weight?: FontWeight
+    style?: string
+  }
+  export interface SatoriOptions {
+    width: number
+    height: number
+    fonts?: FontConfig[]
+    embedFont?: boolean
+    background?: string
+  }
+
+  export default function satori(component: any, options: SatoriOptions): Promise<string>
+}
+
+declare module "satori" {
+  export type SatoriOptions = any
+  const satori: any
+  export default satori
+}
+
+declare module "source-map-support" {
+  export interface Options {
+    environment?: string
+    handleUncaughtExceptions?: boolean
+    hookRequire?: boolean
+    overrideRetrieveFile?: boolean
+    retrieveSourceMap?: (source: string) => { map: string } | null
+  }
+  export function install(options?: Options): void
+  const sourceMapSupport: {
+    install: typeof install
+    Options: Options
+  }
+  namespace sourceMapSupport {
+    type Options = import("source-map-support").Options
+  }
+  export default sourceMapSupport
+}
+
+declare module "fs" {
+  export const promises: {
+    readFile(path: string, options?: any): Promise<any>
+    writeFile(path: string, data: any, options?: any): Promise<void>
+    mkdir(path: string, options?: any): Promise<void>
+    rm(path: string, options?: any): Promise<void>
+    readdir(path: string, options?: any): Promise<string[]>
+    stat(path: string): Promise<{ isDirectory(): boolean }>
+    access(path: string, mode?: number): Promise<void>
+    copyFile(src: string, dest: string, mode?: number): Promise<void>
+  }
+  export function readFile(path: string, options?: any): any
+  export function writeFile(path: string, data: any, options?: any): void
+  export function existsSync(path: string): boolean
+  export function mkdirSync(path: string, options?: any): void
+  export function statSync(path: string): { isDirectory(): boolean }
+  export function readdirSync(path: string, options?: any): string[]
+}
+
+declare module "fs/promises" {
+  export function readFile(path: string, options?: any): Promise<any>
+  export function writeFile(path: string, data: any, options?: any): Promise<void>
+  export function mkdir(path: string, options?: any): Promise<void>
+  export function rm(path: string, options?: any): Promise<void>
+  export function readdir(path: string, options?: any): Promise<string[]>
+  export function stat(path: string): Promise<{ isDirectory(): boolean }>
+  export function access(path: string, mode?: number): Promise<void>
+  export function copyFile(src: string, dest: string, mode?: number): Promise<void>
+  export function unlink(path: string): Promise<void>
+}
+
+declare module "path" {
+  export function join(...segments: string[]): string
+  export function resolve(...segments: string[]): string
+  export function dirname(path: string): string
+  export function basename(path: string, ext?: string): string
+  export function extname(path: string): string
+  export function relative(from: string, to: string): string
+  export const sep: string
+}
+
+declare module "url" {
+  export class URL {
+    constructor(url: string, base?: string)
+    href: string
+    hash: string
+  }
+}
+
+declare module "os" {
+  export function homedir(): string
+  export function tmpdir(): string
+  export function platform(): string
+}
+
+declare module "undici" {
+  export function fetch(input: string, init?: any): Promise<Response>
+}
+
+declare module "canvas" {
+  export const createCanvas: (...args: any[]) => any
+}
+
+declare module "stream" {
+  export class Readable {
+    constructor(options?: any)
+    read(size?: number): any
+  }
+}
+
+declare module "node:fs/promises" {
+  export * from "fs/promises"
+}
+
+declare module "esbuild" {
+  export interface BuildOptions {
+    entryPoints?: string[]
+    outfile?: string
+    bundle?: boolean
+    format?: string
+    platform?: string
+    sourcemap?: boolean | "inline"
+    target?: string | string[]
+    metafile?: boolean
+    write?: boolean
+    plugins?: any[]
+    define?: Record<string, string>
+    external?: string[]
+    loader?: Record<string, string>
+    outdir?: string
+    keepNames?: boolean
+    sourcesContent?: boolean
+    packages?: "external" | "none"
+  }
+  export interface BuildResult {
+    outputFiles?: Array<{ path: string; text: string }>
+    metafile?: any
+  }
+  export function build(options: BuildOptions): Promise<BuildResult>
+  export function transform(code: string, options?: any): Promise<{ code: string; map?: string }>
+}
+
+declare module "remark-parse/lib" {
+  export type Root = any
+  const plugin: (...args: any[]) => any
+  export default plugin
+}
+
+declare module "to-vfile" {
+  export type VFileLike = { path?: string; value?: string; data?: Record<string, any> }
+  export interface VFileData extends VFileLike {
+    data: DataMap
+    history: string[]
+    messages: any[]
+    value: string
+  }
+  export function read(path: string | VFileLike): Promise<VFileData>
+  export function write(file: VFileLike, options?: any): Promise<void>
+  export default function toVFile(options: VFileLike | string): VFileData
+}
+
+declare module "workerpool" {
+  export class Promise<T> extends globalThis.Promise<T> {}
+  export interface WorkerPool {
+    proxy(): globalThis.Promise<any>
+    terminate(force?: boolean): globalThis.Promise<void>
+    exec(method: string, params?: any[]): globalThis.Promise<any>
+  }
+  export function pool(path?: string | null, options?: any): WorkerPool
+  const workerpool: {
+    Promise: typeof Promise
+    pool: typeof pool
+  }
+  export default workerpool
+}
+
+declare module "rfdc" {
+  export interface Options {
+    circles?: boolean
+    proto?: boolean
+    constructor?: boolean
+  }
+  export type Clone = <T>(input: T) => T
+  export default function rfdc(options?: Options): Clone
+}
+
+declare module "node:test" {
+  export const describe: (...args: any[]) => void
+  export const it: (...args: any[]) => void
+  export const beforeEach: (...args: any[]) => void
+  export const afterEach: (...args: any[]) => void
+}
+
+declare module "hast-util-to-jsx-runtime" {
+  export type Components = Record<string, any>
+  export type Jsx = { Fragment: any; jsx: any; jsxs: any }
+  export function toJsxRuntime(tree: any, options: {
+    Fragment: any
+    jsx: any
+    jsxs: any
+    elementAttributeNameCase?: string
+    development?: boolean
+    components?: Components
+  }): any
+}
+
+declare module "hast-util-to-string" {
+  export default function toString(node: any): string
+  export function toString(node: any): string
+}
+
+declare module "mdast-util-to-hast" {
+  export type Options = Record<string, any>
+  export function toHast(tree: any, options?: Options): any
+  const defaultExport: typeof toHast
+  export default defaultExport
+}
+
+declare module "hast-util-to-html" {
+  export type Options = Record<string, any>
+  export function toHtml(tree: any, options?: Options): string
+  const defaultExport: typeof toHtml
+  export default defaultExport
+}
+
+declare module "gray-matter" {
+  export interface GrayMatterFile<T = any> {
+    content: string
+    data: T
+    excerpt?: string
+  }
+  export default function matter<T = any>(input: string, options?: any): GrayMatterFile<T>
+}
+
+declare module "js-yaml" {
+  export function load(input: string, options?: any): any
+  export const JSON_SCHEMA: any
+}
+
+declare module "toml" {
+  export function parse(input: string): any
+}
+
+declare module "@napi-rs/simple-git" {
+  export class Repository {
+    static discover(path: string): Repository
+    log(options?: any): Promise<any>
+    workdir(): string
+    getFileLatestModifiedDateAsync(path: string): Promise<Date>
+  }
+  export type SimpleGit = {
+    log(options?: any): Promise<any>
+  }
+  export function simpleGit(options?: any): SimpleGit
+}
+
+declare module "rehype-mathjax/svg" {
+  export type Options = any
+  export default function rehypeMathjaxSvg(options?: any): any
+}
+
+declare module "katex" {
+  export interface KatexOptions {
+    displayMode?: boolean
+    throwOnError?: boolean
+    errorColor?: string
+    macros?: Record<string, string>
+    trust?: boolean
+  }
+  export function renderToString(tex: string, options?: any): string
+}
+
+declare module "is-absolute-url" {
+  export default function isAbsoluteUrl(input: string): boolean
+}
+
+declare module "flexsearch" {
+  export type DefaultDocumentSearchResults = any
+  export interface Document<T = any> {
+    addAsync(id: any, doc: T): Promise<void>
+    searchAsync(query: any, options?: any): Promise<any>
+  }
+  export function Document<T = any>(config: any): Document<T>
+}
+
+declare module "micromorph" {
+  export default function micromorph(target: Element, source: Element): void
+}
+
+declare module "lightningcss" {
+  export const transform: any
+  export const Features: any
+}
+
+declare module "ansi-truncate" {
+  export default function ansiTruncate(input: string, columns: number): string
+}
+
+declare module "readline" {
+  export interface Interface {
+    close(): void
+  }
+  export function createInterface(options: any): Interface
+  export function clearLine(stream: NodeJS.WriteStream, dir: number): void
+  export function cursorTo(stream: NodeJS.WriteStream, x?: number, y?: number): void
+  const readline: {
+    createInterface: typeof createInterface
+    clearLine: typeof clearLine
+    cursorTo: typeof cursorTo
+  }
+  export default readline
+}
+
+declare const Buffer: {
+  from(source: ArrayBuffer | ArrayLike<number> | string, encoding?: string): any
+  alloc(size: number): any
+}
+
+type Buffer<T = any> = any
+
+declare namespace NodeJS {
+  interface WriteStream {
+    write(str: string): void
+    cursorTo(x?: number, y?: number): void
+    clearLine(dir: number): void
+    isTTY?: boolean
+    columns?: number
+  }
+  type Timeout = number
+  interface ErrnoException extends Error {
+    code?: string | number
+    path?: string
+    syscall?: string
+  }
+}
+
+declare const process: {
+  env: Record<string, string | undefined>
+  cwd(): string
+  argv: string[]
+  stdout: NodeJS.WriteStream
+  stderr: NodeJS.WriteStream
+  exit(code?: number): void
+  hrtime(time?: [number, number]): [number, number]
+}
+
+declare const __dirname: string
+
+declare module "*" {
+  const value: any
+  export default value
+  export = value
 }
 
 declare module "unist-util-visit/lib" {

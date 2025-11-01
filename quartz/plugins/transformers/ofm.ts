@@ -373,7 +373,7 @@ export const ObsidianFlavoredMarkdown: QuartzTransformerPlugin<Partial<Options>>
                 if (typeof replace === "string") {
                   node.value = node.value.replace(regex, replace)
                 } else {
-                  node.value = node.value.replace(regex, (substring: string, ...args) => {
+                  node.value = node.value.replace(regex, (substring: string, ...args: string[]) => {
                     const replaceValue = replace(substring, ...args)
                     if (typeof replaceValue === "string") {
                       return replaceValue

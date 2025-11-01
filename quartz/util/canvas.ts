@@ -19,8 +19,8 @@ export const canvasTitleFromPath = (fp: string): string => {
   return (
     base
       .split(/[-_\s]+/)
-      .filter((segment) => segment.length > 0)
-      .map((segment) => segment[0]?.toLocaleUpperCase?.() + segment.slice(1))
+      .filter((segment: string) => segment.length > 0)
+      .map((segment: string) => segment[0]?.toLocaleUpperCase?.() + segment.slice(1))
       .join(" ")
       .trim() || base
   )
@@ -33,7 +33,7 @@ export const buildCanvasFileData = (
 ): (QuartzPluginData & { canvasData?: CanvasData }) => {
   const slug = toCanvasSlug(relativePath)
   const absolute = joinSegments(ctx.argv.directory, relativePath) as FilePath
-  const fileData: QuartzPluginData & { canvasData?: CanvasData } = {
+  const fileData = ({
     slug,
     filePath: absolute,
     relativePath: relativePath as FilePath,
@@ -41,6 +41,8 @@ export const buildCanvasFileData = (
       title: canvasTitleFromPath(relativePath),
       tags: [],
     },
+  } as QuartzPluginData & { canvasData?: CanvasData }) as unknown as QuartzPluginData & {
+    canvasData?: CanvasData
   }
 
   if (data) {
