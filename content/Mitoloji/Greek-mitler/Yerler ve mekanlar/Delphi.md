@@ -15,3 +15,4 @@ Antik dünyanın en önemli kehanet merkezi::Delphi
 
 Apollon'un kehanet merkezi::Delphi
 
+Zeus'un yutulması için verilen taş nerenin temeli?::delphi

@@ -51,7 +51,6 @@ Kaynak metinde, _Dionysos_'a duyulan coşkunun ve tapınmanın özellikle **Trie
 
 **Dionysos Şenlikleri:** _Dionysos_ onuruna, genellikle üç yılda bir (_Trieterit_) kutlanan, müzik, dans, coşku (_enthousiasmos_) ve şarapla karakterize edilen ayinlerdir. Bu şenlikler, _Dionysos_'un doğayla birleşme gücünü simgeler.
 
-Dionysos şerefine üç yılda bir kutlanan şenliklerin adı nedir?::Trieterit Bayramları 
 Dionysos şenliklerinin ana unsurları nelerdir?::Müzik, dans, şarap ve coşku (_enthousiasmos_)
 
 Antik Yunan'da tiyatronun doğduğu şenlikler hangisidir?::Büyük Dionysia

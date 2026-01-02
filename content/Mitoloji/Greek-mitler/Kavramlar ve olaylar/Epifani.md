@@ -8,4 +8,4 @@ Tapınaklarda olan ışık ve gölge oyunlarına denir. Tanrı sanki varmış gi
 
 Halkı baskılama ve yönetme numarası. 
 
-Epifani nedir?::Tanrı varmış gibi numara yapılmasına denir.
+Epifani nedir?::Tanrı varmış gibi numara yapılmasına denir. gölge oyunu

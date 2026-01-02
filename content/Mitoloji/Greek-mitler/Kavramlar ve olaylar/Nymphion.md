@@ -15,4 +15,4 @@ Nymphion: Kutsal su kaynaklarının, pınarların, derelerin ve ormanların tanr
 
 *Kaynak: Azra Erhat, Mitoloji Sözlüğü*
 
-Nymphion nedir?:: Nymph'lere adanmış tapınak veya kutsal alan.
+Nymphion nedir?:: Nymph'lere adanmış tapınak veya kutsal alan. nympheye ion ekinin gelmesiyle oluşur
